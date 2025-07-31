@@ -8,6 +8,11 @@
     "start-node": "node node-host.js",
     "dev": "nodemon server.js",
     "dev-node": "nodemon node-host.js",
+    "build-web": "node build-web.js",
+    "build": "npx cap build",
+    "sync": "npx cap sync",
+    "open-android": "npx cap open android",
+    "open-ios": "npx cap open ios",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -21,6 +26,10 @@
   "author": "CipherWave Team",
   "license": "MIT",
   "dependencies": {
+    "@capacitor/android": "^7.4.2",
+    "@capacitor/cli": "^7.4.2",
+    "@capacitor/core": "^7.4.2",
+    "@capacitor/ios": "^7.4.2",
     "ws": "^8.18.0"
   },
   "devDependencies": {

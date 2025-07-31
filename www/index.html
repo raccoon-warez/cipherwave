@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherWave - Secure P2P Messenger</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app" class="modern-app">
+        <header class="modern-header">
+            <div class="logo-card">
+                <h1 class="logo-title">CipherWave</h1>
+                <p class="logo-desc">Anonymous, Secure, Decentralized Messaging</p>
+            </div>
+        </header>
+        <main class="modern-main">
+            <section id="mode-selection" class="card mode-card">
+                <h2 class="card-title">Network Mode</h2>
+                <div class="form-group mode-group">
+                    <button id="host-node-btn" class="mode-btn accent-btn">Host Network Node</button>
+                    <button id="join-network-btn" class="mode-btn accent-btn">Join Network</button>
+                </div>
+            </section>
+            <section id="node-panel" class="card node-card hidden">
+                <h2 class="card-title">Host Network Node</h2>
+                <div class="form-group">
+                    <label for="node-port">Node Port:</label>
+                    <input type="number" id="node-port" value="8080" min="1024" max="65535" class="input-modern">
+                </div>
+                <div class="node-btn-group">
+                    <button id="start-node-btn" class="accent-btn">Start Node</button>
+                    <button id="stop-node-btn" class="accent-btn" disabled>Stop Node</button>
+                </div>
+                <div id="node-status" class="status-text">Node Stopped</div>
+            </section>
+            <section id="connection-panel" class="card connection-card hidden">
+                <h2 class="card-title">Join Network</h2>
+                <div class="form-group">
+                    <label for="room-id">Room ID:</label>
+                    <div class="input-group">
+                        <input type="text" id="room-id" placeholder="Enter or generate room ID" class="input-modern">
+                        <button id="generate-room" class="accent-btn">Generate</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="cipher-select">Encryption Cipher:</label>
+                    <select id="cipher-select" class="input-modern">
+                        <option value="aes">AES-256</option>
+                        <option value="rsa">RSA</option>
+                        <option value="chacha20">ChaCha20</option>
+                    </select>
+                </div>
+                <div class="connection-btn-group">
+                    <button id="connect-btn" class="accent-btn">Connect</button>
+                    <button id="disconnect-btn" class="accent-btn" disabled>Disconnect</button>
+                </div>
+                <div id="connection-status" class="status-text">Disconnected</div>
+            </section>
+            <section id="chat-panel" class="card chat-card hidden">
+                <div class="panel-header">
+                    <h2 class="card-title">Chat</h2>
+                    <button class="toggle-btn" id="chat-toggle">▼</button>
+                </div>
+                <div id="messages" class="messages-modern"></div>
+                <div class="input-area chat-input-area">
+                    <input type="text" id="message-input" placeholder="Type your message..." class="input-modern">
+                    <button id="send-btn" class="accent-btn">Send</button>
+                </div>
+            </section>
+            
+            <section id="debug-panel" class="card debug-card hidden">
+                <div class="panel-header">
+                    <h2 class="card-title">Connection Debug</h2>
+                    <button class="toggle-btn" id="debug-toggle">▼</button>
+                </div>
+                <div id="debug-content">
+                    <div id="debug-logs"></div>
+                    <button id="clear-logs-btn" class="accent-btn">Clear Logs</button>
+                    <button id="run-debug-btn" class="accent-btn">Run Debug</button>
+                </div>
+            </section>
+        </main>
+        <footer class="modern-footer">
+            <p class="footer-text">Your communication is <span class="footer-accent">encrypted</span> and never stored on any server.</p>
+        </footer>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
