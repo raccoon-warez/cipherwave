@@ -1,0 +1,40 @@
+{
+  "name": "cipherwave",
+  "version": "1.1.0",
+  "description": "A decentralized, anonymous, peer-to-peer messenger with end-to-end encryption and cipher choice",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start-node": "node node-host.js",
+    "dev": "nodemon server.js",
+    "dev-node": "nodemon node-host.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "webrtc",
+    "p2p",
+    "messaging",
+    "encryption",
+    "decentralized",
+    "anonymous"
+  ],
+  "author": "CipherWave Team",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raccoon-warez/cipherwave"
+  },
+  "bugs": {
+    "url": "https://github.com/raccoon-warez/cipherwave/issues"
+  },
+  "homepage": "https://github.com/raccoon-warez/cipherwave#readme"
+}
