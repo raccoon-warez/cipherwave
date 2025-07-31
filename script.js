@@ -332,6 +332,18 @@ function startConnection() {
                 logConnectionState('Connection failed, attempting to restart ICE');
                 peerConnection.restartIce();
             }
+            
+            // Handle disconnected state
+            if (peerConnection.connectionState === 'disconnected') {
+                logConnectionState('Connection disconnected, monitoring for reconnection');
+                // Set a timeout to restart ICE if we don't reconnect quickly
+                setTimeout(() => {
+                    if (peerConnection.connectionState === 'disconnected') {
+                        logConnectionState('Connection still disconnected, attempting to restart ICE');
+                        peerConnection.restartIce();
+                    }
+                }, 10000);
+            }
         };
         
         peerConnection.onsignalingstatechange = () => {
@@ -389,6 +401,18 @@ function startConnection() {
             // Try to continue with available candidates
             if (peerConnection.iceGatheringState === 'complete') {
                 logConnectionState('ICE gathering completed despite errors');
+            }
+            
+            // If we're still gathering, try to restart ICE after a delay
+            if (peerConnection.iceGatheringState === 'gathering') {
+                logConnectionState('Attempting to restart ICE after candidate error');
+                setTimeout(() => {
+                    if (peerConnection.iceGatheringState === 'gathering') {
+                        logConnectionState('Forcing ICE gathering completion after error');
+                        // Force completion by creating a null candidate
+                        peerConnection.onicecandidate({ candidate: null });
+                    }
+                }, 5000);
             }
         };
         
@@ -527,6 +551,26 @@ function setupDataChannel(channel) {
         // Show connection panel
         chatPanel.classList.add('hidden');
         connectionPanel.classList.remove('hidden');
+    };
+    
+    channel.onerror = (error) => {
+        logConnectionState(`Data channel error: ${error.message}`);
+        console.error('Data channel error:', error);
+        
+        // If we're still connected, try to restart the data channel
+        if (isConnected) {
+            logConnectionState('Attempting to restart data channel after error');
+            isConnected = false;
+            updateConnectionStatus('Data channel error, reconnecting...', 'status-disconnected');
+            
+            // Try to restart the connection after a short delay
+            setTimeout(() => {
+                if (peerConnection && peerConnection.connectionState !== 'connected') {
+                    logConnectionState('Restarting ICE after data channel error');
+                    peerConnection.restartIce();
+                }
+            }, 2000);
+        }
     };
     
     channel.onmessage = event => {
