@@ -155,6 +155,10 @@ This project now includes:
   - `npm run start-node`: Run a node host
   - `npm run dev`: Run the main server with nodemon for development
   - `npm run dev-node`: Run a node host with nodemon for development
+  - `npm run build-web`: Build web assets for mobile apps
+  - `npm run build`: Build native mobile apps
+  - `npm run open-android`: Open Android project in Android Studio
+  - `npm run open-ios`: Open iOS project in Xcode
 - **Security Enhancements**: 
   - Message size limits
   - Input validation
@@ -164,6 +168,57 @@ This project now includes:
   - Comprehensive error logging
   - Uncaught exception handling
   - Unhandled rejection handling
+
+## Mobile App Development
+
+CipherWave can be built as a native mobile app for both Android and iOS using Capacitor.
+
+### Prerequisites
+
+- Node.js and npm
+- Android Studio for Android development
+- Xcode for iOS development (macOS only)
+
+### Building for Mobile
+
+1. Install dependencies:
+   ```
+   npm install
+   ```
+
+2. Build web assets:
+   ```
+   npm run build-web
+   ```
+
+3. Build native apps:
+   ```
+   npm run build
+   ```
+
+4. Open native projects:
+   - For Android: `npm run open-android`
+   - For iOS: `npm run open-ios`
+
+### Android Build
+
+To build for Android:
+1. Ensure Android Studio is installed
+2. Run `npm run build-web` to prepare web assets
+3. Run `npm run build` to build the Android app
+4. Run `npm run open-android` to open the project in Android Studio
+5. Build and run the app from Android Studio
+
+### iOS Build
+
+To build for iOS:
+1. Ensure Xcode is installed (macOS only)
+2. Run `npm run build-web` to prepare web assets
+3. Run `npm run build` to build the iOS app
+4. Run `npm run open-ios` to open the project in Xcode
+5. Build and run the app from Xcode
+
+Note: For iOS development, you may need to run `npx cap add ios` and `npx cap sync` if the iOS platform is not already set up.
 
 ## Files
 
