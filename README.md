@@ -10,6 +10,8 @@ CipherWave is a decentralized, anonymous, peer-to-peer messenger with end-to-end
 - **Decentralized Architecture**: No central server required for messaging
 - **Mobile-First Design**: Fully responsive interface that works on mobile devices
 - **Node Hosting**: Users can contribute to the network by hosting their own signaling nodes
+- **Enhanced Security**: Improved server security with message validation and connection health checks
+- **Better Error Handling**: Comprehensive error handling and logging for easier debugging
 
 ## How It Works
 
@@ -23,13 +25,20 @@ The application supports two modes:
 
 1. Clone or download this repository
 2. Install Node.js (if not already installed)
-3. No additional dependencies are required for the client-side application
+3. Install dependencies:
+   ```
+   npm install
+   ```
 
 ## Usage
 
 ### Option 1: Using the Built-in Signaling Server
 
 1. Start the built-in signaling server:
+   ```
+   npm start
+   ```
+   or
    ```
    node server.js
    ```
@@ -46,6 +55,10 @@ The application supports two modes:
 ### Option 2: Hosting Your Own Signaling Node
 
 1. Start your own signaling node:
+   ```
+   npm run start-node [port]
+   ```
+   or
    ```
    node node-host.js [port]
    ```
@@ -92,7 +105,7 @@ A minimal WebSocket signaling server is used only for:
 ## Contributing to the Network
 
 Users can contribute to the decentralized network by hosting their own signaling nodes:
-1. Run `node node-host.js [port]` to start a node
+1. Run `npm run start-node [port]` to start a node
 2. Share the node address (e.g., `ws://your-ip:port`) with others
 3. Others can connect to your node to establish peer-to-peer connections
 
@@ -108,7 +121,7 @@ If you're having trouble connecting between different browsers or devices:
 
 4. **Check Firewall Settings**: Ensure port 8080 (or your custom port) is open on the device running the signaling server.
 
-5. **Try Different Networks**: Some networks (especially corporate or public Wi-Fi) may block WebRTC connections.
+5. **Try Different Networks**: Some networks (especially corporate or public WI-FI) may block WebRTC connections.
 
 ## Security Considerations
 
@@ -133,6 +146,25 @@ The application includes enhanced debugging features:
 - Debug script (`debug-connection.js`) for diagnosing issues
 - Enhanced error handling and reporting
 
+## Development
+
+This project now includes:
+- **Package Management**: Proper dependency management with npm
+- **Development Scripts**: 
+  - `npm start`: Run the main signaling server
+  - `npm run start-node`: Run a node host
+  - `npm run dev`: Run the main server with nodemon for development
+  - `npm run dev-node`: Run a node host with nodemon for development
+- **Security Enhancements**: 
+  - Message size limits
+  - Input validation
+  - Connection health checks
+  - Graceful shutdown handling
+- **Error Handling**: 
+  - Comprehensive error logging
+  - Uncaught exception handling
+  - Unhandled rejection handling
+
 ## Files
 
 - `index.html`: Main application interface
@@ -140,6 +172,7 @@ The application includes enhanced debugging features:
 - `script.js`: Client-side WebRTC and messaging implementation
 - `server.js`: Built-in signaling server
 - `node-host.js`: Standalone signaling node for hosting
+- `package.json`: Project dependencies and scripts
 - `README.md`: This file
 
 ## License
