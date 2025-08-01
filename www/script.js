@@ -1,32 +1,23 @@
-// CipherWave - Secure P2P Messenger
+// CipherWave - Secure P2P Messenger (Telegram-like UI)
 // script.js
 
-// DOM Elements
-const modeSelection = document.getElementById('mode-selection');
-const nodePanel = document.getElementById('node-panel');
-const connectionPanel = document.getElementById('connection-panel');
-const chatPanel = document.getElementById('chat-panel');
-const debugPanel = document.getElementById('debug-panel');
-const hostNodeBtn = document.getElementById('host-node-btn');
-const joinNetworkBtn = document.getElementById('join-network-btn');
-const nodePortInput = document.getElementById('node-port');
-const startNodeBtn = document.getElementById('start-node-btn');
-const stopNodeBtn = document.getElementById('stop-node-btn');
-const nodeStatus = document.getElementById('node-status');
-const roomInput = document.getElementById('room-id');
+// DOM Elements for Telegram-like UI
+const app = document.getElementById('app');
+const splashScreen = document.getElementById('splash-screen');
+const mainContainer = document.getElementById('main-container');
+const connectionModal = document.getElementById('connection-modal');
+const newChatBtn = document.getElementById('new-chat-btn');
+const closeModal = document.getElementById('close-modal');
+const nicknameInput = document.getElementById('nickname');
+const avatarOptions = document.querySelectorAll('.avatar-option');
+const selectedAvatarInput = document.getElementById('selected-avatar');
+const roomIdInput = document.getElementById('room-id');
 const generateRoomBtn = document.getElementById('generate-room');
 const cipherSelect = document.getElementById('cipher-select');
 const connectBtn = document.getElementById('connect-btn');
-const disconnectBtn = document.getElementById('disconnect-btn');
-const connectionStatus = document.getElementById('connection-status');
-const messagesContainer = document.getElementById('messages');
 const messageInput = document.getElementById('message-input');
 const sendBtn = document.getElementById('send-btn');
-const chatToggle = document.getElementById('chat-toggle');
-const debugToggle = document.getElementById('debug-toggle');
-const debugLogs = document.getElementById('debug-logs');
-const clearLogsBtn = document.getElementById('clear-logs-btn');
-const runDebugBtn = document.getElementById('run-debug-btn');
+const messagesContainer = document.querySelector('.messages-container');
 
 // Application State
 let peerConnection = null;
@@ -36,10 +27,9 @@ let isInitiator = false;
 let currentCipher = 'aes';
 let encryptionKey = null;
 let room = null;
-let nodeServer = null;
 let signalingSocket = null;
-let pendingMessages = new Map(); // For message delivery confirmations
-let messageCounter = 0;
+let userNickname = '';
+let userAvatar = 'avatar1';
 
 // Configuration for WebRTC with fallback options
 const configuration = {
@@ -73,32 +63,9 @@ const configuration = {
     rtcpMuxPolicy: 'require'
 };
 
-// Function to validate TURN server credentials
-function validateTurnCredentials(iceServers) {
-    return iceServers.map(server => {
-        if (server.urls.startsWith('turn:') && (!server.username || !server.credential)) {
-            console.warn('TURN server missing credentials:', server.urls);
-            // Remove the server from the list if credentials are missing
-            return null;
-        }
-        return server;
-    }).filter(server => server !== null);
-}
-
-// Validate and filter ICE servers
-const validatedIceServers = validateTurnCredentials(configuration.iceServers);
-configuration.iceServers = validatedIceServers;
-
-// Connection timeout values
-const CONNECTION_TIMEOUT = 60000; // 60 seconds
-const ICE_TIMEOUT = 30000; // 30 seconds
-
-// Connection state tracking for debugging
-let connectionStateLog = [];
-
 // List of known signaling servers for automatic discovery
 const knownServers = [
-    'ws://localhost:8080',
+    'ws://localhost:52178',
     'ws://localhost:8081',
     'ws://localhost:8082'
 ];
@@ -143,100 +110,47 @@ const signaling = {
     }
 };
 
-// Node server management
-const nodeManager = {
-    start: function(port) {
-        // In a browser environment, we can't actually start a server
-        // This would require a separate Node.js process
-        // For demo purposes, we'll simulate node hosting
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // Simulate starting a node
-                updateNodeStatus('Node Running on port ' + port, 'status-running');
-                startNodeBtn.disabled = true;
-                stopNodeBtn.disabled = false;
-                resolve();
-            }, 1000);
-        });
-    },
-    stop: function() {
-        // Simulate stopping a node
-        updateNodeStatus('Node Stopped', 'status-stopped');
-        startNodeBtn.disabled = false;
-        stopNodeBtn.disabled = true;
-    }
-};
-
-// Automatic server discovery
-async function discoverServer(roomId) {
-    updateConnectionStatus('Discovering network...', 'status-disconnected');
+// Initialize the application
+document.addEventListener('DOMContentLoaded', () => {
+    // Show splash screen for 2 seconds
+    setTimeout(() => {
+        splashScreen.classList.add('hidden');
+        mainContainer.classList.remove('hidden');
+    }, 2000);
     
-    // Try each known server until one works
-    for (const server of knownServers) {
-        try {
-            updateConnectionStatus(`Trying ${server}...`, 'status-disconnected');
-            await signaling.connect(server, roomId);
-            return server;
-        } catch (err) {
-            console.log(`Failed to connect to ${server}`);
-            continue;
-        }
-    }
-    
-    throw new Error('No available signaling servers found');
-}
-
-// Generate a random room ID
-function generateRoomId() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let roomId = '';
-    for (let i = 0; i < 20; i++) {
-        roomId += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return roomId;
-}
-
-// Update node status display
-function updateNodeStatus(text, className) {
-    nodeStatus.textContent = text;
-    nodeStatus.className = className;
-}
-
-// Update connection status display
-function updateConnectionStatus(text, className) {
-    connectionStatus.textContent = text;
-    connectionStatus.className = className;
-}
-
-// Mode selection
-hostNodeBtn.addEventListener('click', () => {
-    modeSelection.classList.add('hidden');
-    nodePanel.classList.remove('hidden');
+    // Generate a room ID by default
+    roomIdInput.value = generateRoomId();
 });
 
-joinNetworkBtn.addEventListener('click', () => {
-    modeSelection.classList.add('hidden');
-    connectionPanel.classList.remove('hidden');
+// Event Listeners
+newChatBtn.addEventListener('click', () => {
+    connectionModal.classList.remove('hidden');
 });
 
-// Node management
-startNodeBtn.addEventListener('click', async () => {
-    const port = nodePortInput.value || 8080;
-    updateNodeStatus('Starting node...', 'status-stopped');
-    try {
-        await nodeManager.start(port);
-    } catch (err) {
-        updateNodeStatus('Failed to start node', 'status-stopped');
-    }
+closeModal.addEventListener('click', () => {
+    connectionModal.classList.add('hidden');
 });
 
-stopNodeBtn.addEventListener('click', () => {
-    nodeManager.stop();
+// Avatar selection
+avatarOptions.forEach(option => {
+    option.addEventListener('click', () => {
+        // Remove selected class from all options
+        avatarOptions.forEach(opt => opt.classList.remove('selected'));
+        
+        // Add selected class to clicked option
+        option.classList.add('selected');
+        
+        // Update hidden input value
+        selectedAvatarInput.value = option.dataset.avatar;
+        
+        // Update userAvatar variable
+        userAvatar = option.dataset.avatar;
+    });
 });
 
 // Generate room ID on button click
 generateRoomBtn.addEventListener('click', () => {
-    roomInput.value = generateRoomId();
+    roomIdInput.value = generateRoomId();
 });
 
 // Update cipher selection
@@ -246,21 +160,23 @@ cipherSelect.addEventListener('change', () => {
 
 // Connect to room
 connectBtn.addEventListener('click', async () => {
-    room = roomInput.value.trim();
+    userNickname = nicknameInput.value.trim() || 'Anonymous';
+    room = roomIdInput.value.trim();
+    
     if (!room) {
         alert('Please enter or generate a room ID');
         return;
     }
 
-    // Set connection status
-    updateConnectionStatus('Discovering network...', 'status-disconnected');
-
+    // Hide modal
+    connectionModal.classList.add('hidden');
+    
     // Discover and connect to signaling server
     let serverUrl;
     try {
         serverUrl = await discoverServer(room);
     } catch (err) {
-        updateConnectionStatus('No available servers', 'status-disconnected');
+        alert('No available servers');
         return;
     }
 
@@ -282,261 +198,133 @@ connectBtn.addEventListener('click', async () => {
     });
 });
 
-// Log connection state for debugging
-function logConnectionState(state) {
-    const timestamp = new Date().toLocaleTimeString();
-    connectionStateLog.push(`${timestamp}: ${state}`);
-    console.log(`[Connection Log] ${timestamp}: ${state}`);
-    
-    // Update debug panel in real-time
-    if (typeof debugLogs !== 'undefined' && debugLogs) {
-        const logEntry = document.createElement('div');
-        logEntry.className = 'debug-log-entry';
-        logEntry.textContent = `[${timestamp}] ${state}`;
-        debugLogs.appendChild(logEntry);
-        
-        // Scroll to bottom
-        debugLogs.scrollTop = debugLogs.scrollHeight;
+// Send message
+sendBtn.addEventListener('click', sendMessage);
+messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
     }
+});
+
+// Generate a random room ID
+function generateRoomId() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let roomId = '';
+    for (let i = 0; i < 20; i++) {
+        roomId += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return roomId;
+}
+
+// Automatic server discovery
+async function discoverServer(roomId) {
+    // Try each known server until one works
+    for (const server of knownServers) {
+        try {
+            await signaling.connect(server, roomId);
+            return server;
+        } catch (err) {
+            console.log(`Failed to connect to ${server}`);
+            continue;
+        }
+    }
+    
+    throw new Error('No available signaling servers found');
 }
 
 // Start WebRTC connection
 function startConnection() {
     try {
-        // Update connection status
-        updateConnectionStatus('Establishing peer connection...', 'status-disconnected');
-        logConnectionState('Starting WebRTC connection setup');
-        
         // Create peer connection
         peerConnection = new RTCPeerConnection(configuration);
-        logConnectionState('RTCPeerConnection created');
-        
-        // Set up connection timeout
-        const connectionTimeout = setTimeout(() => {
-            if (peerConnection.connectionState !== 'connected' && 
-                peerConnection.connectionState !== 'completed') {
-                logConnectionState('Connection timeout - no connection established');
-                updateConnectionStatus('Connection timeout', 'status-disconnected');
-                
-                // Try to restart ICE if connection is still trying
-                if (peerConnection.iceConnectionState === 'checking' || 
-                    peerConnection.iceConnectionState === 'disconnected') {
-                    logConnectionState('Attempting ICE restart after timeout');
-                    peerConnection.restartIce();
-                }
-            }
-        }, CONNECTION_TIMEOUT);
-        
-        // Log connection state changes
-        peerConnection.onconnectionstatechange = () => {
-            logConnectionState(`Connection state: ${peerConnection.connectionState}`);
-            updateConnectionStatus(`Connection: ${peerConnection.connectionState}`, 'status-disconnected');
-            
-            // Clear timeout if connection is established
-            if (peerConnection.connectionState === 'connected' || 
-                peerConnection.connectionState === 'completed') {
-                clearTimeout(connectionTimeout);
-            }
-            
-            // Handle connection failure
-            if (peerConnection.connectionState === 'failed') {
-                logConnectionState('Connection failed, attempting to restart ICE');
-                peerConnection.restartIce();
-            }
-            
-            // Handle disconnected state
-            if (peerConnection.connectionState === 'disconnected') {
-                logConnectionState('Connection disconnected, monitoring for reconnection');
-                // Set a timeout to restart ICE if we don't reconnect quickly
-                setTimeout(() => {
-                    if (peerConnection.connectionState === 'disconnected') {
-                        logConnectionState('Connection still disconnected, attempting to restart ICE');
-                        peerConnection.restartIce();
-                    }
-                }, 10000);
-            }
-        };
-        
-        peerConnection.onsignalingstatechange = () => {
-            logConnectionState(`Signaling state: ${peerConnection.signalingState}`);
-        };
-        
-        peerConnection.oniceconnectionstatechange = () => {
-            logConnectionState(`ICE connection state: ${peerConnection.iceConnectionState}`);
-            
-            // Handle ICE connection failure
-            if (peerConnection.iceConnectionState === 'failed') {
-                logConnectionState('ICE connection failed, attempting to restart ICE');
-                peerConnection.restartIce();
-            }
-            
-            // Handle ICE disconnection
-            if (peerConnection.iceConnectionState === 'disconnected') {
-                logConnectionState('ICE connection disconnected, monitoring for reconnection');
-            }
-        };
-        
-        peerConnection.onicegatheringstatechange = () => {
-            logConnectionState(`ICE gathering state: ${peerConnection.iceGatheringState}`);
-            
-            // Set ICE gathering timeout
-            if (peerConnection.iceGatheringState === 'gathering') {
-                setTimeout(() => {
-                    if (peerConnection.iceGatheringState === 'gathering') {
-                        logConnectionState('ICE gathering timeout - forcing completion');
-                        // Force completion by creating a null candidate
-                        peerConnection.onicecandidate({ candidate: null });
-                    }
-                }, ICE_TIMEOUT);
-            }
-        };
-        
-        // Handle ICE candidates with better error handling
-        peerConnection.onicecandidate = event => {
-            if (event.candidate) {
-                logConnectionState(`ICE candidate gathered: ${event.candidate.type} (${event.candidate.protocol})`);
-                signaling.send({
-                    type: 'candidate',
-                    candidate: event.candidate
-                });
-            } else {
-                logConnectionState('ICE candidate gathering complete');
-            }
-        };
-        
-        // Handle ICE candidate errors with fallback
-        peerConnection.onicecandidateerror = event => {
-            logConnectionState(`ICE candidate error: ${event.errorCode} - ${event.errorText} (${event.url})`);
-            console.error('ICE candidate error:', event);
-            
-            // Try to continue with available candidates
-            if (peerConnection.iceGatheringState === 'complete') {
-                logConnectionState('ICE gathering completed despite errors');
-            }
-            
-            // If we're still gathering, try to restart ICE after a delay
-            if (peerConnection.iceGatheringState === 'gathering') {
-                logConnectionState('Attempting to restart ICE after candidate error');
-                setTimeout(() => {
-                    if (peerConnection.iceGatheringState === 'gathering') {
-                        logConnectionState('Forcing ICE gathering completion after error');
-                        // Force completion by creating a null candidate
-                        peerConnection.onicecandidate({ candidate: null });
-                    }
-                }, 5000);
-            }
-        };
         
         // Handle data channel
         if (isInitiator) {
-            logConnectionState('Creating data channel (initiator)');
-            // Create data channel for initiator with better configuration
-            dataChannel = peerConnection.createDataChannel('messaging', {
-                ordered: true,
-                maxRetransmits: 3
-            });
+            // Create data channel for initiator
+            dataChannel = peerConnection.createDataChannel('messaging');
             setupDataChannel(dataChannel);
             
-            // Create offer with better configuration
-            logConnectionState('Creating offer');
-            peerConnection.createOffer({
-                offerToReceiveAudio: false,
-                offerToReceiveVideo: false
-            })
+            // Create offer
+            peerConnection.createOffer()
                 .then(offer => {
-                    logConnectionState('Offer created, setting local description');
                     return peerConnection.setLocalDescription(offer);
                 })
                 .then(() => {
-                    logConnectionState('Local description set, sending offer');
                     signaling.send({
                         type: 'offer',
                         offer: peerConnection.localDescription
                     });
                 })
                 .catch(error => {
-                    logConnectionState(`Error creating offer: ${error.message}`);
                     console.error('Error creating offer:', error);
-                    updateConnectionStatus('Connection failed', 'status-disconnected');
                 });
         } else {
-            logConnectionState('Waiting for data channel (non-initiator)');
-            // Handle incoming data channel for non-initiator with better configuration
+            // Handle incoming data channel for non-initiator
             peerConnection.ondatachannel = event => {
-                logConnectionState('Data channel received');
                 dataChannel = event.channel;
-                dataChannel.binaryType = 'arraybuffer';
                 setupDataChannel(dataChannel);
             };
         }
         
+        // Handle ICE candidates
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+                signaling.send({
+                    type: 'candidate',
+                    candidate: event.candidate
+                });
+            }
+        };
+        
+        // Handle signaling messages
+        peerConnection.oniceconnectionstatechange = () => {
+            if (peerConnection.iceConnectionState === 'connected') {
+                console.log('Connected to peer');
+            }
+        };
+        
     } catch (error) {
-        logConnectionState(`Error starting connection: ${error.message}`);
         console.error('Error starting connection:', error);
-        updateConnectionStatus('Connection failed', 'status-disconnected');
     }
 }
 
 // Handle signaling messages
 function handleSignalingMessage(message) {
-    if (!peerConnection) {
-        logConnectionState('Received signaling message but no peer connection exists');
-        return;
-    }
-    
-    logConnectionState(`Received signaling message: ${message.type}`);
+    if (!peerConnection) return;
     
     switch (message.type) {
         case 'offer':
-            logConnectionState('Processing offer');
             peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer))
                 .then(() => {
-                    logConnectionState('Remote offer set, creating answer');
                     return peerConnection.createAnswer();
                 })
                 .then(answer => {
-                    logConnectionState('Answer created, setting local description');
                     return peerConnection.setLocalDescription(answer);
                 })
                 .then(() => {
-                    logConnectionState('Local answer set, sending answer');
                     signaling.send({
                         type: 'answer',
                         answer: peerConnection.localDescription
                     });
                 })
                 .catch(error => {
-                    logConnectionState(`Error handling offer: ${error.message}`);
                     console.error('Error handling offer:', error);
                 });
             break;
             
         case 'answer':
-            logConnectionState('Processing answer');
             peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer))
-                .then(() => {
-                    logConnectionState('Remote answer set successfully');
-                })
                 .catch(error => {
-                    logConnectionState(`Error handling answer: ${error.message}`);
                     console.error('Error handling answer:', error);
                 });
             break;
             
         case 'candidate':
-            logConnectionState(`Adding ICE candidate: ${message.candidate.type}`);
             peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate))
-                .then(() => {
-                    logConnectionState('ICE candidate added successfully');
-                })
                 .catch(error => {
-                    logConnectionState(`Error adding ICE candidate: ${error.message}`);
                     console.error('Error adding ICE candidate:', error);
                 });
             break;
-            
-        default:
-            logConnectionState(`Unknown signaling message type: ${message.type}`);
     }
 }
 
@@ -544,44 +332,12 @@ function handleSignalingMessage(message) {
 function setupDataChannel(channel) {
     channel.onopen = () => {
         isConnected = true;
-        updateConnectionStatus('Connected', 'status-connected');
-        connectBtn.disabled = true;
-        disconnectBtn.disabled = false;
-        
-        // Show chat panel
-        connectionPanel.classList.add('hidden');
-        chatPanel.classList.remove('hidden');
+        console.log('Data channel opened');
     };
     
     channel.onclose = () => {
         isConnected = false;
-        updateConnectionStatus('Disconnected', 'status-disconnected');
-        connectBtn.disabled = false;
-        disconnectBtn.disabled = true;
-        
-        // Show connection panel
-        chatPanel.classList.add('hidden');
-        connectionPanel.classList.remove('hidden');
-    };
-    
-    channel.onerror = (error) => {
-        logConnectionState(`Data channel error: ${error.message}`);
-        console.error('Data channel error:', error);
-        
-        // If we're still connected, try to restart the data channel
-        if (isConnected) {
-            logConnectionState('Attempting to restart data channel after error');
-            isConnected = false;
-            updateConnectionStatus('Data channel error, reconnecting...', 'status-disconnected');
-            
-            // Try to restart the connection after a short delay
-            setTimeout(() => {
-                if (peerConnection && peerConnection.connectionState !== 'connected') {
-                    logConnectionState('Restarting ICE after data channel error');
-                    peerConnection.restartIce();
-                }
-            }, 2000);
-        }
+        console.log('Data channel closed');
     };
     
     channel.onmessage = event => {
@@ -590,58 +346,13 @@ function setupDataChannel(channel) {
             if (data.type === 'message') {
                 // Decrypt message
                 const decryptedMessage = decryptMessage(data.content, currentCipher);
-                displayMessage(decryptedMessage, 'received');
-            } else if (data.type === 'delivery-confirmation') {
-                // Handle message delivery confirmation
-                const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
-                if (messageElement) {
-                    const statusElement = messageElement.querySelector('.message-status');
-                    if (statusElement) {
-                        statusElement.textContent = '✓✓';
-                        statusElement.className = 'message-status delivered';
-                    }
-                }
+                displayMessage(decryptedMessage, 'received', null, data.nickname, data.avatar);
             }
         } catch (error) {
             console.error('Error processing message:', error);
         }
     };
 }
-
-// Disconnect from room
-disconnectBtn.addEventListener('click', () => {
-    if (dataChannel) {
-        dataChannel.close();
-    }
-    if (peerConnection) {
-        peerConnection.close();
-    }
-
-    signaling.disconnect();
-
-    isConnected = false;
-    updateConnectionStatus('Disconnected', 'status-disconnected');
-    connectBtn.disabled = false;
-    disconnectBtn.disabled = true;
-
-    // Show connection panel
-    chatPanel.classList.add('hidden');
-    connectionPanel.classList.remove('hidden');
-
-    // Clear messages
-    messagesContainer.innerHTML = '';
-    
-    // Clear pending messages
-    pendingMessages.clear();
-});
-
-// Send message
-sendBtn.addEventListener('click', sendMessage);
-messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
-});
 
 // Send message function
 function sendMessage() {
@@ -652,41 +363,18 @@ function sendMessage() {
         // Encrypt message
         const encryptedMessage = encryptMessage(message, currentCipher);
         
-        // Create message ID for tracking
-        const messageId = ++messageCounter;
-        
         // Send via data channel
         const messageData = {
             type: 'message',
             content: encryptedMessage,
             timestamp: Date.now(),
-            messageId: messageId
+            nickname: userNickname,
+            avatar: userAvatar
         };
         
         dataChannel.send(JSON.stringify(messageData));
-        displayMessage(message, 'sent', messageId);
+        displayMessage(message, 'sent', null, userNickname, userAvatar);
         messageInput.value = '';
-        
-        // Track pending message for delivery confirmation
-        pendingMessages.set(messageId, {
-            content: message,
-            timestamp: Date.now()
-        });
-        
-        // Set timeout for delivery confirmation
-        setTimeout(() => {
-            if (pendingMessages.has(messageId)) {
-                const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-                if (messageElement) {
-                    const statusElement = messageElement.querySelector('.message-status');
-                    if (statusElement && statusElement.textContent === '✓') {
-                        statusElement.textContent = '⚠';
-                        statusElement.className = 'message-status not-delivered';
-                    }
-                }
-                pendingMessages.delete(messageId);
-            }
-        }, 5000);
         
     } catch (error) {
         console.error('Error sending message:', error);
@@ -695,31 +383,33 @@ function sendMessage() {
 }
 
 // Display message in UI
-function displayMessage(message, type, messageId = null) {
+function displayMessage(message, type, messageId = null, nickname = null, avatar = null) {
     const messageElement = document.createElement('div');
     messageElement.className = `message ${type}`;
     
-    if (messageId) {
-        messageElement.setAttribute('data-message-id', messageId);
+    // Create avatar element
+    if (nickname && avatar) {
+        const avatarElement = document.createElement('div');
+        avatarElement.className = 'message-avatar';
+        avatarElement.textContent = nickname.charAt(0).toUpperCase();
+        messageElement.appendChild(avatarElement);
     }
     
     const messageContent = document.createElement('div');
-    messageContent.textContent = message;
+    messageContent.className = 'message-content';
+    
+    const messageText = document.createElement('div');
+    messageText.className = 'message-text';
+    messageText.textContent = message;
     
     const messageInfo = document.createElement('div');
     messageInfo.className = 'message-info';
     messageInfo.textContent = new Date().toLocaleTimeString();
     
-    // Add delivery status indicator for sent messages
-    if (type === 'sent') {
-        const statusElement = document.createElement('span');
-        statusElement.className = 'message-status';
-        statusElement.textContent = '✓';
-        messageInfo.appendChild(statusElement);
-    }
-    
+    messageContent.appendChild(messageText);
+    messageContent.appendChild(messageInfo);
     messageElement.appendChild(messageContent);
-    messageElement.appendChild(messageInfo);
+    
     messagesContainer.appendChild(messageElement);
     
     // Scroll to bottom
@@ -762,7 +452,7 @@ function handleKeyExchange(message) {
     if (message.type === 'key') {
         // Set the encryption key received from the initiator
         encryptionKey = CryptoJS.enc.Hex.parse(message.key);
-        logConnectionState(`Encryption key received for ${message.cipher}`);
+        console.log(`Encryption key received for ${message.cipher}`);
     }
 }
 
@@ -807,112 +497,4 @@ function decryptMessage(encryptedMessage, cipher) {
         console.error('Decryption error:', error);
         return '[Decryption Error]';
     }
-}
-
-// Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
-    // Set initial states
-    updateNodeStatus('Node Stopped', 'status-stopped');
-    updateConnectionStatus('Disconnected', 'status-disconnected');
-    
-    // Generate a room ID by default
-    roomInput.value = generateRoomId();
-    
-    // Show debug panel
-    debugPanel.classList.remove('hidden');
-});
-
-// Expandable panel functionality
-chatToggle.addEventListener('click', () => {
-    const content = document.querySelector('#messages');
-    if (content.style.display === 'none') {
-        content.style.display = 'block';
-        chatToggle.textContent = '▼';
-    } else {
-        content.style.display = 'none';
-        chatToggle.textContent = '▶';
-    }
-});
-
-debugToggle.addEventListener('click', () => {
-    const content = document.querySelector('#debug-content');
-    if (content.style.display === 'none') {
-        content.style.display = 'block';
-        debugToggle.textContent = '▼';
-    } else {
-        content.style.display = 'none';
-        debugToggle.textContent = '▶';
-    }
-});
-
-// Debug panel functionality
-clearLogsBtn.addEventListener('click', () => {
-    debugLogs.innerHTML = '';
-    connectionStateLog = [];
-});
-
-runDebugBtn.addEventListener('click', () => {
-    // Run the debug connection function
-    debugConnection();
-});
-
-// Enhanced debug connection function
-function debugConnection() {
-    const logEntry = document.createElement('div');
-    logEntry.className = 'debug-log-entry';
-    
-    let debugInfo = `=== CipherWave Debug Report ===\n`;
-    debugInfo += `Time: ${new Date().toLocaleString()}\n\n`;
-    
-    // Check if required APIs are available
-    debugInfo += `WebRTC Support: ${!!window.RTCPeerConnection}\n`;
-    debugInfo += `WebSocket Support: ${!!window.WebSocket}\n`;
-    debugInfo += `Crypto Support: ${!!window.crypto}\n\n`;
-    
-    // Check network connectivity
-    debugInfo += `Online Status: ${navigator.onLine}\n\n`;
-    
-    // Check signaling server connection
-    if (typeof signalingSocket !== 'undefined' && signalingSocket) {
-        debugInfo += `Signaling Server Status: ${signalingSocket.readyState}\n`;
-        debugInfo += `Signaling Server URL: ${signalingSocket.url || 'N/A'}\n\n`;
-    } else {
-        debugInfo += `Signaling Server: Not connected\n\n`;
-    }
-    
-    // Check WebRTC connection
-    if (typeof peerConnection !== 'undefined' && peerConnection) {
-        debugInfo += `Peer Connection State: ${peerConnection.connectionState}\n`;
-        debugInfo += `Signaling State: ${peerConnection.signalingState}\n`;
-        debugInfo += `ICE Connection State: ${peerConnection.iceConnectionState}\n`;
-        debugInfo += `ICE Gathering State: ${peerConnection.iceGatheringState}\n\n`;
-    } else {
-        debugInfo += `Peer Connection: Not established\n\n`;
-    }
-    
-    // Check data channel
-    if (typeof dataChannel !== 'undefined' && dataChannel) {
-        debugInfo += `Data Channel State: ${dataChannel.readyState}\n`;
-        debugInfo += `Data Channel Label: ${dataChannel.label}\n\n`;
-    } else {
-        debugInfo += `Data Channel: Not established\n\n`;
-    }
-    
-    // Display connection log
-    if (typeof connectionStateLog !== 'undefined' && connectionStateLog && connectionStateLog.length > 0) {
-        debugInfo += `=== Recent Connection Events ===\n`;
-        // Show last 10 log entries
-        const recentLogs = connectionStateLog.slice(-10);
-        debugInfo += recentLogs.join('\n');
-    } else {
-        debugInfo += `=== No Connection Events ===\n`;
-    }
-    
-    debugInfo += `\n=== End Debug Report ===`;
-    
-    logEntry.textContent = debugInfo;
-    debugLogs.appendChild(logEntry);
-    
-    // Scroll to bottom
-    debugLogs.scrollTop = debugLogs.scrollHeight;
 }
