@@ -1,5 +1,7 @@
 # CipherWave - Secure P2P Messenger
 
+![CipherWave Interface](cipherwave.png)
+
 CipherWave is a decentralized, anonymous, peer-to-peer messenger with end-to-end encryption and cipher choice. It enables secure communication directly between browsers without central servers for messaging.
 
 ## Features
