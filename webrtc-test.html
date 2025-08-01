@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC Test</title>
+</head>
+<body>
+    <h1>WebRTC Test</h1>
+    <button id="startButton">Start</button>
+    <button id="callButton">Call</button>
+    <button id="hangupButton">Hang Up</button>
+    <div>
+        <h2>Local Video</h2>
+        <video id="localVideo" autoplay playsinline></video>
+    </div>
+    <div>
+        <h2>Remote Video</h2>
+        <video id="remoteVideo" autoplay playsinline></video>
+    </div>
+    
+    <script>
+        // Get DOM elements
+        const startButton = document.getElementById('startButton');
+        const callButton = document.getElementById('callButton');
+        const hangupButton = document.getElementById('hangupButton');
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        
+        // WebRTC variables
+        let localStream;
+        let remoteStream;
+        let localConnection;
+        let remoteConnection;
+        
+        // Configuration for WebRTC
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+            ]
+        };
+        
+        // Start button event handler
+        startButton.onclick = start;
+        callButton.onclick = call;
+        hangupButton.onclick = hangup;
+        
+        // Start function - get local media stream
+        async function start() {
+            console.log('Requesting local stream');
+            startButton.disabled = true;
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+                console.log('Received local stream');
+                localVideo.srcObject = stream;
+                localStream = stream;
+                callButton.disabled = false;
+            } catch (e) {
+                alert(`getUserMedia() error: ${e.name}`);
+                console.error('getUserMedia() error:', e);
+            }
+        }
+        
+        // Call function - create WebRTC connection
+        async function call() {
+            callButton.disabled = true;
+            hangupButton.disabled = false;
+            console.log('Starting call');
+            
+            // Create local peer connection
+            localConnection = new RTCPeerConnection(configuration);
+            console.log('Created local peer connection object localConnection');
+            
+            // Add local stream to local connection
+            localStream.getTracks().forEach(track => {
+                localConnection.addTrack(track, localStream);
+            });
+            
+            // Create remote peer connection
+            remoteConnection = new RTCPeerConnection(configuration);
+            console.log('Created remote peer connection object remoteConnection');
+            
+            // Set up remote stream
+            remoteConnection.ontrack = event => {
+                console.log('Remote stream received');
+                remoteVideo.srcObject = event.streams[0];
+                remoteStream = event.streams[0];
+            };
+            
+            // Handle ICE candidates
+            localConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    console.log('Local ICE candidate:', event.candidate);
+                    remoteConnection.addIceCandidate(event.candidate);
+                }
+            };
+            
+            remoteConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    console.log('Remote ICE candidate:', event.candidate);
+                    localConnection.addIceCandidate(event.candidate);
+                }
+            };
+            
+            // Create offer
+            try {
+                console.log('Creating offer');
+                const offer = await localConnection.createOffer();
+                console.log('Created offer:', offer);
+                
+                console.log('Setting local description');
+                await localConnection.setLocalDescription(offer);
+                
+                console.log('Setting remote description');
+                await remoteConnection.setRemoteDescription(offer);
+                
+                console.log('Creating answer');
+                const answer = await remoteConnection.createAnswer();
+                console.log('Created answer:', answer);
+                
+                console.log('Setting remote description');
+                await remoteConnection.setLocalDescription(answer);
+                
+                console.log('Setting local description');
+                await localConnection.setRemoteDescription(answer);
+                
+                console.log('Call established');
+            } catch (e) {
+                console.error('Error in call setup:', e);
+            }
+        }
+        
+        // Hang up function - close connections
+        function hangup() {
+            console.log('Ending call');
+            localConnection.close();
+            remoteConnection.close();
+            localConnection = null;
+            remoteConnection = null;
+            hangupButton.disabled = true;
+            callButton.disabled = false;
+        }
+    </script>
+</body>
+</html>

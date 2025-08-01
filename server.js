@@ -178,6 +178,11 @@ const heartbeatInterval = setInterval(() => {
     });
 }, 30000);
 
+// Handle server errors
+wss.on('error', function(error) {
+    log(`WebSocket server error: ${error.message}`, 'ERROR');
+});
+
 // Handle server shutdown
 process.on('SIGTERM', () => {
     log('SIGTERM received, shutting down gracefully');

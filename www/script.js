@@ -287,6 +287,17 @@ function logConnectionState(state) {
     const timestamp = new Date().toLocaleTimeString();
     connectionStateLog.push(`${timestamp}: ${state}`);
     console.log(`[Connection Log] ${timestamp}: ${state}`);
+    
+    // Update debug panel in real-time
+    if (typeof debugLogs !== 'undefined' && debugLogs) {
+        const logEntry = document.createElement('div');
+        logEntry.className = 'debug-log-entry';
+        logEntry.textContent = `[${timestamp}] ${state}`;
+        debugLogs.appendChild(logEntry);
+        
+        // Scroll to bottom
+        debugLogs.scrollTop = debugLogs.scrollHeight;
+    }
 }
 
 // Start WebRTC connection
@@ -905,18 +916,3 @@ function debugConnection() {
     // Scroll to bottom
     debugLogs.scrollTop = debugLogs.scrollHeight;
 }
-
-// Override the logConnectionState function to also update the debug panel
-const originalLogConnectionState = logConnectionState;
-logConnectionState = function(state) {
-    originalLogConnectionState(state);
-    
-    // Update debug panel in real-time
-    const logEntry = document.createElement('div');
-    logEntry.className = 'debug-log-entry';
-    logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${state}`;
-    debugLogs.appendChild(logEntry);
-    
-    // Scroll to bottom
-    debugLogs.scrollTop = debugLogs.scrollHeight;
-};
