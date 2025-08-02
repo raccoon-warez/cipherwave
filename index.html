@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CipherWave - Secure P2P Messenger</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div id="app" class="modern-app">
@@ -14,33 +16,48 @@
                 <p class="logo-desc">Anonymous, Secure, Decentralized Messaging</p>
             </div>
         </header>
+        
+        <!-- User Profile Section -->
+        <section class="user-profile">
+            <div class="avatar-container">
+                <img src="cipherwave.png" alt="User Avatar" class="user-avatar">
+                <div class="avatar-badge"></div>
+            </div>
+            <div class="user-info">
+                <h2 class="user-name">Anonymous User</h2>
+                <div class="user-id">ID: <span id="user-id-display">CW-XXXXXX</span></div>
+            </div>
+        </section>
+        
         <main class="modern-main">
             <section id="mode-selection" class="card mode-card">
-                <h2 class="card-title">Network Mode</h2>
+                <h2 class="card-title"><i class="fas fa-network-wired"></i> Network Mode</h2>
                 <div class="form-group mode-group">
-                    <button id="host-node-btn" class="mode-btn accent-btn">Host Network Node</button>
-                    <button id="join-network-btn" class="mode-btn accent-btn">Join Network</button>
+                    <button id="host-node-btn" class="mode-btn accent-btn"><i class="fas fa-server"></i> Host Network Node</button>
+                    <button id="join-network-btn" class="mode-btn accent-btn"><i class="fas fa-plug"></i> Join Network</button>
                 </div>
             </section>
+            
             <section id="node-panel" class="card node-card hidden">
-                <h2 class="card-title">Host Network Node</h2>
+                <h2 class="card-title"><i class="fas fa-server"></i> Host Network Node</h2>
                 <div class="form-group">
                     <label for="node-port">Node Port:</label>
                     <input type="number" id="node-port" value="8080" min="1024" max="65535" class="input-modern">
                 </div>
                 <div class="node-btn-group">
-                    <button id="start-node-btn" class="accent-btn">Start Node</button>
-                    <button id="stop-node-btn" class="accent-btn" disabled>Stop Node</button>
+                    <button id="start-node-btn" class="accent-btn"><i class="fas fa-play"></i> Start Node</button>
+                    <button id="stop-node-btn" class="accent-btn" disabled><i class="fas fa-stop"></i> Stop Node</button>
                 </div>
-                <div id="node-status" class="status-text">Node Stopped</div>
+                <div id="node-status" class="status-text"><i class="fas fa-circle-info"></i> Node Stopped</div>
             </section>
+            
             <section id="connection-panel" class="card connection-card hidden">
-                <h2 class="card-title">Join Network</h2>
+                <h2 class="card-title"><i class="fas fa-link"></i> Join Network</h2>
                 <div class="form-group">
                     <label for="room-id">Room ID:</label>
                     <div class="input-group">
                         <input type="text" id="room-id" placeholder="Enter or generate room ID" class="input-modern">
-                        <button id="generate-room" class="accent-btn">Generate</button>
+                        <button id="generate-room" class="accent-btn"><i class="fas fa-random"></i> Generate</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -52,35 +69,40 @@
                     </select>
                 </div>
                 <div class="connection-btn-group">
-                    <button id="connect-btn" class="accent-btn">Connect</button>
-                    <button id="disconnect-btn" class="accent-btn" disabled>Disconnect</button>
+                    <button id="connect-btn" class="accent-btn"><i class="fas fa-plug"></i> Connect</button>
+                    <button id="disconnect-btn" class="accent-btn" disabled><i class="fas fa-unlink"></i> Disconnect</button>
                 </div>
-                <div id="connection-status" class="status-text">Disconnected</div>
+                <div id="connection-status" class="status-text"><i class="fas fa-circle-info"></i> Disconnected</div>
             </section>
+            
             <section id="chat-panel" class="card chat-card hidden">
-                <div class="panel-header">
-                    <h2 class="card-title">Chat</h2>
-                    <button class="toggle-btn" id="chat-toggle">▼</button>
+                <div class="chat-header">
+                    <img src="cipherwave.png" alt="Peer Avatar" class="user-avatar">
+                    <div class="chat-header-info">
+                        <h3>Peer Connection</h3>
+                        <p id="peer-status">Disconnected</p>
+                    </div>
                 </div>
                 <div id="messages" class="messages-modern"></div>
                 <div class="input-area chat-input-area">
                     <input type="text" id="message-input" placeholder="Type your message..." class="input-modern">
-                    <button id="send-btn" class="accent-btn">Send</button>
+                    <button id="send-btn" class="accent-btn"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </section>
             
             <section id="debug-panel" class="card debug-card hidden">
                 <div class="panel-header">
-                    <h2 class="card-title">Connection Debug</h2>
+                    <h2 class="card-title"><i class="fas fa-bug"></i> Connection Debug</h2>
                     <button class="toggle-btn" id="debug-toggle">▼</button>
                 </div>
                 <div id="debug-content">
                     <div id="debug-logs"></div>
-                    <button id="clear-logs-btn" class="accent-btn">Clear Logs</button>
-                    <button id="run-debug-btn" class="accent-btn">Run Debug</button>
+                    <button id="clear-logs-btn" class="accent-btn"><i class="fas fa-trash"></i> Clear Logs</button>
+                    <button id="run-debug-btn" class="accent-btn"><i class="fas fa-play"></i> Run Debug</button>
                 </div>
             </section>
         </main>
+        
         <footer class="modern-footer">
             <p class="footer-text">Your communication is <span class="footer-accent">encrypted</span> and never stored on any server.</p>
         </footer>

@@ -27,8 +27,6 @@ const debugToggle = document.getElementById('debug-toggle');
 const debugLogs = document.getElementById('debug-logs');
 const clearLogsBtn = document.getElementById('clear-logs-btn');
 const runDebugBtn = document.getElementById('run-debug-btn');
-const userIdDisplay = document.getElementById('user-id-display');
-const peerStatus = document.getElementById('peer-status');
 
 // Application State
 let peerConnection = null;
@@ -42,7 +40,6 @@ let nodeServer = null;
 let signalingSocket = null;
 let pendingMessages = new Map(); // For message delivery confirmations
 let messageCounter = 0;
-let userId = null;
 
 // Configuration for WebRTC with fallback options
 const configuration = {
@@ -199,17 +196,6 @@ function generateRoomId() {
     return roomId;
 }
 
-// Generate a unique user ID
-function generateUserId() {
-    const prefix = 'CW';
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let id = prefix + '-';
-    for (let i = 0; i < 6; i++) {
-        id += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return id;
-}
-
 // Update node status display
 function updateNodeStatus(text, className) {
     nodeStatus.textContent = text;
@@ -220,18 +206,6 @@ function updateNodeStatus(text, className) {
 function updateConnectionStatus(text, className) {
     connectionStatus.textContent = text;
     connectionStatus.className = className;
-    
-    // Update peer status in chat header
-    if (peerStatus) {
-        peerStatus.textContent = text;
-        if (className.includes('connected')) {
-            peerStatus.style.color = '#4CAF50';
-        } else if (className.includes('disconnected')) {
-            peerStatus.style.color = '#F44336';
-        } else {
-            peerStatus.style.color = '#FF9800';
-        }
-    }
 }
 
 // Mode selection
@@ -730,7 +704,6 @@ function displayMessage(message, type, messageId = null) {
     }
     
     const messageContent = document.createElement('div');
-    messageContent.className = 'message-content';
     messageContent.textContent = message;
     
     const messageInfo = document.createElement('div');
@@ -845,12 +818,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Generate a room ID by default
     roomInput.value = generateRoomId();
     
-    // Generate and display user ID
-    userId = generateUserId();
-    if (userIdDisplay) {
-        userIdDisplay.textContent = userId;
-    }
-    
     // Show debug panel
     debugPanel.classList.remove('hidden');
 });
@@ -895,8 +862,7 @@ function debugConnection() {
     logEntry.className = 'debug-log-entry';
     
     let debugInfo = `=== CipherWave Debug Report ===\n`;
-    debugInfo += `Time: ${new Date().toLocaleString()}\n`;
-    debugInfo += `User ID: ${userId || 'Not generated'}\n\n`;
+    debugInfo += `Time: ${new Date().toLocaleString()}\n\n`;
     
     // Check if required APIs are available
     debugInfo += `WebRTC Support: ${!!window.RTCPeerConnection}\n`;
