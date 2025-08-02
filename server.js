@@ -1,17 +1,99 @@
-// CipherWave Signaling Server
+// CipherWave Signaling Server with Static File Serving
 // Run: npm start
 const WebSocket = require('ws');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const url = require('url');
 
 // Configuration
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 52178;
 const HOST = process.env.HOST || '0.0.0.0';
 const MAX_ROOM_SIZE = 2; // Maximum clients per room
 const MAX_MESSAGE_SIZE = 64 * 1024; // 64KB max message size
+const WWW_DIR = path.join(__dirname, 'www');
 
-// Create WebSocket server with security options
+// Create HTTP server
+const server = http.createServer((req, res) => {
+    // Parse the request URL
+    const parsedUrl = url.parse(req.url);
+    let pathname = parsedUrl.pathname;
+    
+    // Serve index.html for root path
+    if (pathname === '/') {
+        pathname = '/index.html';
+    }
+    
+    // Construct the file path
+    const filePath = path.join(WWW_DIR, pathname);
+    
+    // Check if the file exists and is within the www directory
+    fs.access(filePath, fs.constants.F_OK, (err) => {
+        if (err) {
+            // File not found
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('404 Not Found');
+            return;
+        }
+        
+        // Check if the file is within the www directory (security check)
+        if (!filePath.startsWith(WWW_DIR)) {
+            res.writeHead(403, { 'Content-Type': 'text/plain' });
+            res.end('403 Forbidden');
+            return;
+        }
+        
+        // Determine content type based on file extension
+        const ext = path.extname(filePath);
+        let contentType = 'text/plain';
+        
+        switch (ext) {
+            case '.html':
+                contentType = 'text/html';
+                break;
+            case '.css':
+                contentType = 'text/css';
+                break;
+            case '.js':
+                contentType = 'text/javascript';
+                break;
+            case '.json':
+                contentType = 'application/json';
+                break;
+            case '.png':
+                contentType = 'image/png';
+                break;
+            case '.jpg':
+            case '.jpeg':
+                contentType = 'image/jpeg';
+                break;
+            case '.gif':
+                contentType = 'image/gif';
+                break;
+            case '.svg':
+                contentType = 'image/svg+xml';
+                break;
+            default:
+                contentType = 'application/octet-stream';
+        }
+        
+        // Read and serve the file
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('500 Internal Server Error');
+                return;
+            }
+            
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(data);
+        });
+    });
+});
+
+// Create WebSocket server on the same HTTP server
 const wss = new WebSocket.Server({ 
-    port: PORT, 
-    host: HOST,
+    server: server,
     clientTracking: true,
     maxPayload: MAX_MESSAGE_SIZE
 });
@@ -183,6 +265,16 @@ wss.on('error', function(error) {
     log(`WebSocket server error: ${error.message}`, 'ERROR');
 });
 
+// Start the HTTP server
+server.listen(PORT, HOST, () => {
+    log(`CipherWave server running on ${HOST}:${PORT}`);
+    log(`HTTP server accessible at http://${HOST}:${PORT}`);
+    log(`WebSocket server accessible at ws://${HOST}:${PORT}`);
+    log(`Server started at: ${new Date().toLocaleString()}`);
+    log(`Maximum room size: ${MAX_ROOM_SIZE} clients`);
+    log(`Maximum message size: ${MAX_MESSAGE_SIZE} bytes`);
+});
+
 // Handle server shutdown
 process.on('SIGTERM', () => {
     log('SIGTERM received, shutting down gracefully');
@@ -192,8 +284,8 @@ process.on('SIGTERM', () => {
         ws.close();
     });
     
-    wss.close(() => {
-        log('WebSocket server closed');
+    server.close(() => {
+        log('Server closed');
         process.exit(0);
     });
 });
@@ -210,9 +302,3 @@ process.on('unhandledRejection', (reason, promise) => {
     log(`Unhandled rejection at: ${promise}, reason: ${reason}`, 'ERROR');
     process.exit(1);
 });
-
-log(`CipherWave signaling server running on ${HOST}:${PORT}`);
-log(`Accessible at ws://${HOST}:${PORT}`);
-log(`Server started at: ${new Date().toLocaleString()}`);
-log(`Maximum room size: ${MAX_ROOM_SIZE} clients`);
-log(`Maximum message size: ${MAX_MESSAGE_SIZE} bytes`);
