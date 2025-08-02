@@ -5,286 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CipherWave - Secure P2P Messenger</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="app" class="telegram-app">
-        <!-- Splash Screen -->
-        <div id="splash-screen" class="splash-screen">
-            <div class="splash-content">
-                <div class="logo-container">
-                    <div class="logo-wave"></div>
-                    <h1 class="logo-title">CipherWave</h1>
-                </div>
-                <p class="logo-subtitle">Secure, Anonymous, Decentralized</p>
-                <div class="loading-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
+    <div id="app" class="modern-app">
+        <header class="modern-header">
+            <div class="logo-card">
+                <h1 class="logo-title">CipherWave</h1>
+                <p class="logo-desc">Anonymous, Secure, Decentralized Messaging</p>
             </div>
-        </div>
-
-        <!-- Main App Container -->
-        <div id="main-container" class="main-container hidden">
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <div class="sidebar-header">
-                    <div class="user-avatar online">
-                        <div class="avatar-placeholder">CW</div>
-                    </div>
-                    <div class="sidebar-actions">
-                        <button class="icon-button" id="search-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </button>
-                        <button class="icon-button" id="menu-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="3" y1="12" x2="21" y2="12"></line>
-                                <line x1="3" y1="6" x2="21" y2="6"></line>
-                                <line x1="3" y1="18" x2="21" y2="18"></line>
-                            </svg>
-                        </button>
+        </header>
+        <main class="modern-main">
+            <section id="mode-selection" class="card mode-card">
+                <h2 class="card-title">Network Mode</h2>
+                <div class="form-group mode-group">
+                    <button id="host-node-btn" class="mode-btn accent-btn">Host Network Node</button>
+                    <button id="join-network-btn" class="mode-btn accent-btn">Join Network</button>
+                </div>
+            </section>
+            <section id="node-panel" class="card node-card hidden">
+                <h2 class="card-title">Host Network Node</h2>
+                <div class="form-group">
+                    <label for="node-port">Node Port:</label>
+                    <input type="number" id="node-port" value="8080" min="1024" max="65535" class="input-modern">
+                </div>
+                <div class="node-btn-group">
+                    <button id="start-node-btn" class="accent-btn">Start Node</button>
+                    <button id="stop-node-btn" class="accent-btn" disabled>Stop Node</button>
+                </div>
+                <div id="node-status" class="status-text">Node Stopped</div>
+            </section>
+            <section id="connection-panel" class="card connection-card hidden">
+                <h2 class="card-title">Join Network</h2>
+                <div class="form-group">
+                    <label for="room-id">Room ID:</label>
+                    <div class="input-group">
+                        <input type="text" id="room-id" placeholder="Enter or generate room ID" class="input-modern">
+                        <button id="generate-room" class="accent-btn">Generate</button>
                     </div>
                 </div>
-
-                <div class="chats-list">
-                    <div class="chat-item active">
-                        <div class="chat-avatar">
-                            <div class="avatar-placeholder">R1</div>
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-header">
-                                <h3 class="chat-name">Room 1</h3>
-                                <span class="chat-time">10:30 AM</span>
-                            </div>
-                            <div class="chat-preview">
-                                <p class="last-message">Hey, are you ready for the meeting?</p>
-                                <div class="chat-indicators">
-                                    <span class="unread-count">2</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="chat-item">
-                        <div class="chat-avatar">
-                            <div class="avatar-placeholder">R2</div>
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-header">
-                                <h3 class="chat-name">Room 2</h3>
-                                <span class="chat-time">Yesterday</span>
-                            </div>
-                            <div class="chat-preview">
-                                <p class="last-message">Thanks for the information!</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="chat-item">
-                        <div class="chat-avatar">
-                            <div class="avatar-placeholder">R3</div>
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-header">
-                                <h3 class="chat-name">Room 3</h3>
-                                <span class="chat-time">Wed</span>
-                            </div>
-                            <div class="chat-preview">
-                                <p class="last-message">The file has been encrypted and sent</p>
-                            </div>
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label for="cipher-select">Encryption Cipher:</label>
+                    <select id="cipher-select" class="input-modern">
+                        <option value="aes">AES-256</option>
+                        <option value="rsa">RSA</option>
+                        <option value="chacha20">ChaCha20</option>
+                    </select>
                 </div>
-
-                <div class="sidebar-footer">
-                    <button class="fab-button" id="new-chat-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </button>
+                <div class="connection-btn-group">
+                    <button id="connect-btn" class="accent-btn">Connect</button>
+                    <button id="disconnect-btn" class="accent-btn" disabled>Disconnect</button>
                 </div>
-            </div>
-
-            <!-- Chat Area -->
-            <div class="chat-area">
-                <div class="chat-header">
-                    <div class="chat-header-info">
-                        <div class="chat-avatar">
-                            <div class="avatar-placeholder">R1</div>
-                        </div>
-                        <div class="chat-title">
-                            <h2>Room 1</h2>
-                            <p>Online</p>
-                        </div>
-                    </div>
-                    <div class="chat-header-actions">
-                        <button class="icon-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="12"></line>
-                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                            </svg>
-                        </button>
-                        <button class="icon-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="3" y1="6" x2="21" y2="6"></line>
-                                <line x1="3" y1="12" x2="21" y2="12"></line>
-                                <line x1="3" y1="18" x2="21" y2="18"></line>
-                            </svg>
-                        </button>
-                    </div>
+                <div id="connection-status" class="status-text">Disconnected</div>
+            </section>
+            <section id="chat-panel" class="card chat-card hidden">
+                <div class="panel-header">
+                    <h2 class="card-title">Chat</h2>
+                    <button class="toggle-btn" id="chat-toggle">▼</button>
                 </div>
-
-                <div class="messages-container">
-                    <div class="message received">
-                        <div class="message-avatar">
-                            <div class="avatar-placeholder">A</div>
-                        </div>
-                        <div class="message-content">
-                            <div class="message-text">
-                                <p>Hey there! How's the project going?</p>
-                            </div>
-                            <div class="message-info">
-                                <span class="message-time">10:25 AM</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="message sent">
-                        <div class="message-content">
-                            <div class="message-text">
-                                <p>Pretty well! I've implemented the new encryption features.</p>
-                            </div>
-                            <div class="message-info">
-                                <span class="message-time">10:27 AM</span>
-                                <span class="message-status delivered">✓✓</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="message received">
-                        <div class="message-avatar">
-                            <div class="avatar-placeholder">A</div>
-                        </div>
-                        <div class="message-content">
-                            <div class="message-text">
-                                <p>That's great! Can you share the documentation?</p>
-                            </div>
-                            <div class="message-info">
-                                <span class="message-time">10:28 AM</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="message sent">
-                        <div class="message-content">
-                            <div class="message-text">
-                                <p>Sure, I'll send it over in a few minutes.</p>
-                            </div>
-                            <div class="message-info">
-                                <span class="message-time">10:30 AM</span>
-                                <span class="message-status">✓</span>
-                            </div>
-                        </div>
-                    </div>
+                <div id="messages" class="messages-modern"></div>
+                <div class="input-area chat-input-area">
+                    <input type="text" id="message-input" placeholder="Type your message..." class="input-modern">
+                    <button id="send-btn" class="accent-btn">Send</button>
                 </div>
-
-                <div class="message-input-area">
-                    <div class="input-actions">
-                        <button class="icon-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="16"></line>
-                                <line x1="8" y1="12" x2="16" y2="12"></line>
-                            </svg>
-                        </button>
-                        <button class="icon-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="input-container">
-                        <input type="text" id="message-input" placeholder="Type a message..." class="message-input">
-                    </div>
-                    <div class="send-actions">
-                        <button class="icon-button" id="send-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                            </svg>
-                        </button>
-                    </div>
+            </section>
+            
+            <section id="debug-panel" class="card debug-card hidden">
+                <div class="panel-header">
+                    <h2 class="card-title">Connection Debug</h2>
+                    <button class="toggle-btn" id="debug-toggle">▼</button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Connection Modal -->
-        <div id="connection-modal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Join Network</h2>
-                    <button class="close-button" id="close-modal">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
+                <div id="debug-content">
+                    <div id="debug-logs"></div>
+                    <button id="clear-logs-btn" class="accent-btn">Clear Logs</button>
+                    <button id="run-debug-btn" class="accent-btn">Run Debug</button>
                 </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="nickname">Nickname</label>
-                        <input type="text" id="nickname" placeholder="Enter your nickname" class="input-field">
-                    </div>
-                    <div class="form-group">
-                        <label>Avatar</label>
-                        <div class="avatar-selection">
-                            <div class="avatar-option selected" data-avatar="avatar1">
-                                <div class="avatar-preview" style="background-color: #6C63FF;"></div>
-                            </div>
-                            <div class="avatar-option" data-avatar="avatar2">
-                                <div class="avatar-preview" style="background-color: #FF6B6B;"></div>
-                            </div>
-                            <div class="avatar-option" data-avatar="avatar3">
-                                <div class="avatar-preview" style="background-color: #4ECDC4;"></div>
-                            </div>
-                            <div class="avatar-option" data-avatar="avatar4">
-                                <div class="avatar-preview" style="background-color: #FFD166;"></div>
-                            </div>
-                            <div class="avatar-option" data-avatar="avatar5">
-                                <div class="avatar-preview" style="background-color: #118AB2;"></div>
-                            </div>
-                        </div>
-                        <input type="hidden" id="selected-avatar" value="avatar1">
-                    </div>
-                    <div class="form-group">
-                        <label for="room-id">Room ID</label>
-                        <div class="input-group">
-                            <input type="text" id="room-id" placeholder="Enter or generate room ID" class="input-field">
-                            <button id="generate-room" class="btn-secondary">Generate</button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="cipher-select">Encryption Cipher</label>
-                        <select id="cipher-select" class="input-field">
-                            <option value="aes">AES-256</option>
-                            <option value="rsa">RSA</option>
-                            <option value="chacha20">ChaCha20</option>
-                        </select>
-                    </div>
-                    <div class="form-actions">
-                        <button id="connect-btn" class="btn-primary">Connect</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+            </section>
+        </main>
+        <footer class="modern-footer">
+            <p class="footer-text">Your communication is <span class="footer-accent">encrypted</span> and never stored on any server.</p>
+        </footer>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="script.js"></script>

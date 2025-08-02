@@ -98,7 +98,7 @@ let connectionStateLog = [];
 
 // List of known signaling servers for automatic discovery
 const knownServers = [
-    'ws://localhost:52178',
+    'ws://localhost:8080',
     'ws://localhost:8081',
     'ws://localhost:8082'
 ];
