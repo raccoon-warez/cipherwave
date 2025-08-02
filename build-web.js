@@ -22,8 +22,13 @@ filesToCopy.forEach(file => {
   const source = path.join(__dirname, file);
   const destination = path.join(__dirname, 'www', file);
   
-  fs.copyFileSync(source, destination);
-  console.log(`Copied ${file} to www directory`);
+  // Check if source file exists before copying
+  if (fs.existsSync(source)) {
+    fs.copyFileSync(source, destination);
+    console.log(`Copied ${file} to www directory`);
+  } else {
+    console.log(`Source file ${file} not found, skipping...`);
+  }
 });
 
 // Copy CryptoJS library
