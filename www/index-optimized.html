@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherWave - Secure P2P Messenger</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1419;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #0088cc;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #8899a6;
+            font-size: 1.1rem;
+        }
+
+        .panel {
+            background: #1a1f29;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #2a3441;
+        }
+
+        .panel.hidden {
+            display: none;
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .mode-selection {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            background: #0088cc;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn:hover {
+            background: #0077bb;
+            transform: translateY(-2px);
+        }
+
+        .mode-btn i {
+            margin-right: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #8899a6;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: #2a3441;
+            border: 1px solid #3a4451;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #0088cc;
+            box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #0088cc;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background: #0077bb;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: #3a4451;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn.btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn i {
+            margin-right: 5px;
+        }
+
+        .status {
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .status-disconnected {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        .status-connecting {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .status-connected {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+        }
+
+        .status-error {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+        }
+
+        .messages {
+            height: 400px;
+            overflow-y: auto;
+            background: #1a1f29;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #2a3441;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 70%;
+            animation: messageSlide 0.3s ease-out;
+        }
+
+        .message-sent {
+            margin-left: auto;
+        }
+
+        .message-received {
+            margin-right: auto;
+        }
+
+        .message-content {
+            background: #2a3441;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+        }
+
+        .message-sent .message-content {
+            background: #0088cc;
+        }
+
+        .message-text {
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: #8899a6;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .message-received .message-time {
+            text-align: left;
+        }
+
+        .message-encrypted {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .message-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            min-height: 44px;
+            max-height: 120px;
+            resize: none;
+            padding: 12px 16px;
+            background: #2a3441;
+            border: 1px solid #3a4451;
+            border-radius: 22px;
+            color: #ffffff;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #0088cc;
+            box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.2);
+        }
+
+        .debug-panel {
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #30363d;
+        }
+
+        .debug-logs {
+            background: #000000;
+            color: #58a6ff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            padding: 15px;
+            border-radius: 6px;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-bottom: 15px;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0088cc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error and success notifications */
+        .error-notification, .success-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .error-notification {
+            background: #dc3545;
+        }
+
+        .success-notification {
+            background: #28a745;
+        }
+
+        .error-close, .success-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .mode-selection {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+
+            .panel {
+                padding: 15px;
+            }
+        }
+
+        /* Mobile-specific styles */
+        .mobile .btn {
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+
+        .mobile .message-input {
+            font-size: 16px; /* Prevent zoom on iOS */
+        }
+    </style>
+  <script type="module" crossorigin src="/assets/main-BypHilGW.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/chunk-CGihlwpU.js">
+  <link rel="modulepreload" crossorigin href="/assets/chunk-C5CM1_3S.js">
+  <link rel="modulepreload" crossorigin href="/assets/chunk-CPu859Ob.js">
+  <link rel="modulepreload" crossorigin href="/assets/chunk-DeIA6xm2.js">
+  <link rel="modulepreload" crossorigin href="/assets/chunk-C8-IYZm0.js">
+  <script type="module">import.meta.url;import("_").catch(()=>1);(async function*(){})().next();if(location.protocol!="file:"){window.__vite_is_modern_browser=true}</script>
+  <script type="module">!function(){if(window.__vite_is_modern_browser)return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("vite-legacy-polyfill"),n=document.createElement("script");n.src=e.src,n.onload=function(){System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))},document.body.appendChild(n)}();</script>
+<link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                CipherWave
+            </div>
+            <div class="subtitle">End-to-End Encrypted P2P Messenger</div>
+        </div>
+
+        <!-- Mode Selection -->
+        <div class="panel" id="mode-selection">
+            <div class="panel-title">Choose Connection Mode</div>
+            <div class="mode-selection">
+                <button class="mode-btn" id="host-node-btn">
+                    <i class="fas fa-server"></i>
+                    Host Node
+                </button>
+                <button class="mode-btn" id="join-network-btn">
+                    <i class="fas fa-network-wired"></i>
+                    Join Network
+                </button>
+            </div>
+        </div>
+
+        <!-- Connection Panel -->
+        <div class="panel" id="connection-panel">
+            <div class="panel-title">Connect to Room</div>
+            <div class="form-group">
+                <label for="room-id">Room ID:</label>
+                <div class="button-group">
+                    <input type="text" id="room-id" placeholder="Enter room ID">
+                    <button class="btn btn-secondary" id="generate-room">Generate</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="cipher-select">Encryption:</label>
+                <select id="cipher-select">
+                    <option value="chacha20-poly1305">ChaCha20-Poly1305 (Recommended)</option>
+                    <option value="aes">AES-256-GCM</option>
+                </select>
+            </div>
+            <div class="button-group">
+                <button class="btn" id="connect-btn">Connect</button>
+                <button class="btn btn-secondary" id="disconnect-btn" disabled>Disconnect</button>
+                <span class="status status-disconnected" id="connection-status">Disconnected</span>
+            </div>
+        </div>
+
+        <!-- Chat Panel -->
+        <div class="panel hidden" id="chat-panel">
+            <div class="panel-title">Secure Chat</div>
+            <div id="messages" class="messages">
+                <div style="text-align: center; color: #8899a6; padding: 20px;" class="encryption-notice">
+                    <i class="fas fa-lock" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>Messages are end-to-end encrypted.<br>Only you and the recipient can read them.</p>
+                </div>
+            </div>
+            <div class="message-input-group">
+                <textarea id="message-input" class="message-input" placeholder="Type a message..." maxlength="5000" rows="1"></textarea>
+                <button class="btn" id="send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Debug Panel -->
+        <div class="debug-panel">
+            <div class="panel-title">
+                Debug Information
+                <button class="btn btn-secondary" id="run-debug-btn" style="float: right; padding: 5px 10px; font-size: 0.9rem;">
+                    Run Debug
+                </button>
+                <button class="btn btn-secondary" id="clear-logs-btn" style="float: right; margin-right: 10px; padding: 5px 10px; font-size: 0.9rem;">
+                    Clear Logs
+                </button>
+            </div>
+            <div id="debug-logs" class="debug-logs">
+                CipherWave Debug Console - Ready
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic feature buttons (loaded by feature managers) -->
+    <button data-feature="file-sharing" style="display: none;">File Sharing</button>
+    <button data-feature="voice-messages" style="display: none;">Voice Messages</button>
+
+    <!-- Main application entry point -->
+  <script nomodule>!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();</script>
+  <script nomodule crossorigin id="vite-legacy-polyfill" src="/assets/polyfills-legacy-BMRKL--B.js"></script>
+  <script nomodule crossorigin id="vite-legacy-entry" data-src="/assets/main-legacy-D5cvuzhE.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
+</body>
+</html>
