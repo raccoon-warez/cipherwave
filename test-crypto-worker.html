@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherWave Crypto Worker Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #005a9e;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .performance-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007acc;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .log-area {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007acc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 CipherWave Crypto Worker Test Suite</h1>
+        
+        <div class="test-section">
+            <h2>System Information</h2>
+            <div id="system-info" class="info">Loading system information...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Security Manager Initialization</h2>
+            <button onclick="testSecurityManagerInit()">Initialize Security Manager</button>
+            <div id="init-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Crypto Performance Benchmark</h2>
+            <button onclick="runPerformanceBenchmark()">Run Benchmark</button>
+            <div id="benchmark-results"></div>
+            <div class="performance-stats" id="performance-stats"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Key Generation Tests</h2>
+            <button onclick="testKeyGeneration()">Test Key Generation</button>
+            <div id="keygen-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Encryption/Decryption Tests</h2>
+            <button onclick="testEncryptionDecryption()">Test Encryption</button>
+            <div id="encryption-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Stress Test</h2>
+            <button onclick="runStressTest()">Run Stress Test (100 operations)</button>
+            <button onclick="stopStressTest()">Stop Test</button>
+            <div id="stress-results"></div>
+            <div class="log-area" id="stress-logs"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Worker Communication Test</h2>
+            <button onclick="testWorkerCommunication()">Test Worker Communication</button>
+            <div id="worker-results"></div>
+        </div>
+    </div>
+
+    <script src="security-manager.js"></script>
+    <script>
+        let securityManager = null;
+        let stressTestRunning = false;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            displaySystemInfo();
+            log('Page loaded, ready for testing');
+        });
+
+        function log(message, type = 'info') {
+            console.log(`[${new Date().toISOString()}] ${message}`);
+            
+            // Also add to stress test logs if running
+            if (stressTestRunning) {
+                const logsEl = document.getElementById('stress-logs');
+                if (logsEl) {
+                    logsEl.innerHTML += `<div>${new Date().toISOString()}: ${message}</div>`;
+                    logsEl.scrollTop = logsEl.scrollHeight;
+                }
+            }
+        }
+
+        function displayResult(elementId, message, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            const div = document.createElement('div');
+            div.className = `test-result ${isSuccess ? 'success' : 'error'}`;
+            div.textContent = message;
+            element.appendChild(div);
+        }
+
+        function displaySystemInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                webCrypto: !!(window.crypto && window.crypto.subtle),
+                workers: typeof Worker !== 'undefined',
+                serviceWorkers: 'serviceWorker' in navigator,
+                indexedDB: 'indexedDB' in window,
+                localStorage: typeof Storage !== 'undefined',
+                webRTC: !!(window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection),
+                webAssembly: typeof WebAssembly !== 'undefined'
+            };
+
+            let html = '<strong>Browser Capabilities:</strong><br>';
+            for (const [key, value] of Object.entries(info)) {
+                const status = value ? '✅' : '❌';
+                html += `${status} ${key}: ${value}<br>`;
+            }
+
+            document.getElementById('system-info').innerHTML = html;
+        }
+
+        async function testSecurityManagerInit() {
+            const resultsEl = document.getElementById('init-results');
+            resultsEl.innerHTML = '<div class="loading"></div> Initializing Security Manager...';
+
+            try {
+                securityManager = new SecurityManager();
+                log('SecurityManager created');
+
+                const initSuccess = await securityManager.initialize();
+                log(`SecurityManager initialization: ${initSuccess}`);
+
+                if (initSuccess) {
+                    const publicKeys = securityManager.getPublicKeys();
+                    log('Public keys generated successfully');
+
+                    displayResult('init-results', '✅ Security Manager initialized successfully', true);
+                    displayResult('init-results', `Identity key length: ${publicKeys.identity.length}`, true);
+                    displayResult('init-results', `Ephemeral key length: ${publicKeys.ephemeral.length}`, true);
+
+                    // Test performance stats
+                    try {
+                        const stats = await securityManager.getPerformanceStats();
+                        log('Performance stats retrieved');
+                        displayResult('init-results', `Crypto libraries available: ${JSON.stringify(stats)}`, true);
+                    } catch (error) {
+                        log(`Performance stats error: ${error.message}`);
+                        displayResult('init-results', `Performance stats unavailable: ${error.message}`, false);
+                    }
+                } else {
+                    displayResult('init-results', '❌ Security Manager initialization failed', false);
+                }
+            } catch (error) {
+                log(`Initialization error: ${error.message}`);
+                displayResult('init-results', `❌ Error: ${error.message}`, false);
+            }
+        }
+
+        async function runPerformanceBenchmark() {
+            if (!securityManager) {
+                displayResult('benchmark-results', '❌ Please initialize Security Manager first', false);
+                return;
+            }
+
+            const resultsEl = document.getElementById('benchmark-results');
+            const statsEl = document.getElementById('performance-stats');
+            resultsEl.innerHTML = '<div class="loading"></div> Running performance benchmark...';
+            statsEl.innerHTML = '';
+
+            try {
+                const testData = 'This is a test message for performance benchmarking. '.repeat(10);
+                const iterations = 50;
+                const results = {
+                    keyGeneration: [],
+                    encryption: [],
+                    decryption: [],
+                    signing: [],
+                    verification: []
+                };
+
+                // Key generation benchmark
+                log('Starting key generation benchmark');
+                for (let i = 0; i < 10; i++) {
+                    const start = performance.now();
+                    const tempManager = new SecurityManager();
+                    await tempManager.initialize();
+                    const end = performance.now();
+                    results.keyGeneration.push(end - start);
+                    tempManager.destroy();
+                }
+
+                // Encryption/Decryption benchmark
+                log('Starting encryption/decryption benchmark');
+                const peerManager = new SecurityManager();
+                await peerManager.initialize();
+                const peerPublicKeys = peerManager.getPublicKeys();
+                await securityManager.performKeyExchange(peerPublicKeys.ephemeral);
+
+                for (let i = 0; i < iterations; i++) {
+                    // Encryption
+                    const encStart = performance.now();
+                    const encrypted = await securityManager.encryptMessage(testData);
+                    const encEnd = performance.now();
+                    results.encryption.push(encEnd - encStart);
+
+                    // Decryption
+                    const decStart = performance.now();
+                    await securityManager.decryptMessage(encrypted);
+                    const decEnd = performance.now();
+                    results.decryption.push(decEnd - decStart);
+
+                    if (i % 10 === 0) {
+                        log(`Completed ${i}/${iterations} encrypt/decrypt cycles`);
+                    }
+                }
+
+                peerManager.destroy();
+
+                // Calculate averages
+                const avgKeyGen = results.keyGeneration.reduce((a, b) => a + b, 0) / results.keyGeneration.length;
+                const avgEncryption = results.encryption.reduce((a, b) => a + b, 0) / results.encryption.length;
+                const avgDecryption = results.decryption.reduce((a, b) => a + b, 0) / results.decryption.length;
+
+                // Display results
+                statsEl.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-value">${avgKeyGen.toFixed(2)}ms</div>
+                        <div class="stat-label">Avg Key Generation</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${avgEncryption.toFixed(2)}ms</div>
+                        <div class="stat-label">Avg Encryption</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${avgDecryption.toFixed(2)}ms</div>
+                        <div class="stat-label">Avg Decryption</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${iterations}</div>
+                        <div class="stat-label">Test Iterations</div>
+                    </div>
+                `;
+
+                displayResult('benchmark-results', '✅ Performance benchmark completed successfully', true);
+                displayResult('benchmark-results', `Key generation: ${avgKeyGen.toFixed(2)}ms average`, true);
+                displayResult('benchmark-results', `Encryption: ${avgEncryption.toFixed(2)}ms average`, true);
+                displayResult('benchmark-results', `Decryption: ${avgDecryption.toFixed(2)}ms average`, true);
+
+                log('Performance benchmark completed');
+
+            } catch (error) {
+                log(`Benchmark error: ${error.message}`);
+                displayResult('benchmark-results', `❌ Error: ${error.message}`, false);
+            }
+        }
+
+        async function testKeyGeneration() {
+            if (!securityManager) {
+                displayResult('keygen-results', '❌ Please initialize Security Manager first', false);
+                return;
+            }
+
+            const resultsEl = document.getElementById('keygen-results');
+            resultsEl.innerHTML = '<div class="loading"></div> Testing key generation...';
+
+            try {
+                // Test multiple key generation
+                const keyPairs = [];
+                for (let i = 0; i < 5; i++) {
+                    const tempManager = new SecurityManager();
+                    await tempManager.initialize();
+                    const keys = tempManager.getPublicKeys();
+                    keyPairs.push(keys);
+                    tempManager.destroy();
+                }
+
+                // Verify all keys are different
+                let allUnique = true;
+                for (let i = 0; i < keyPairs.length; i++) {
+                    for (let j = i + 1; j < keyPairs.length; j++) {
+                        if (JSON.stringify(keyPairs[i]) === JSON.stringify(keyPairs[j])) {
+                            allUnique = false;
+                            break;
+                        }
+                    }
+                }
+
+                displayResult('keygen-results', '✅ Key generation test completed', true);
+                displayResult('keygen-results', `Generated ${keyPairs.length} unique key pairs`, true);
+                displayResult('keygen-results', `All keys unique: ${allUnique ? 'Yes' : 'No'}`, allUnique);
+
+                log('Key generation test completed');
+
+            } catch (error) {
+                log(`Key generation error: ${error.message}`);
+                displayResult('keygen-results', `❌ Error: ${error.message}`, false);
+            }
+        }
+
+        async function testEncryptionDecryption() {
+            if (!securityManager) {
+                displayResult('encryption-results', '❌ Please initialize Security Manager first', false);
+                return;
+            }
+
+            const resultsEl = document.getElementById('encryption-results');
+            resultsEl.innerHTML = '<div class="loading"></div> Testing encryption/decryption...';
+
+            try {
+                // Setup peer connection
+                const peerManager = new SecurityManager();
+                await peerManager.initialize();
+                const peerPublicKeys = peerManager.getPublicKeys();
+                await securityManager.performKeyExchange(peerPublicKeys.ephemeral);
+
+                const testMessages = [
+                    'Hello, World!',
+                    'This is a longer test message with special characters: !@#$%^&*()',
+                    'Unicode test: 🔐🚀🌟💻🔒',
+                    'A'.repeat(1000), // Long message
+                    '', // Empty message
+                    JSON.stringify({test: 'object', number: 42, array: [1, 2, 3]})
+                ];
+
+                let successCount = 0;
+                for (const message of testMessages) {
+                    try {
+                        const encrypted = await securityManager.encryptMessage(message);
+                        const decrypted = await securityManager.decryptMessage(encrypted);
+                        
+                        if (decrypted === message) {
+                            successCount++;
+                            displayResult('encryption-results', `✅ Message encrypted/decrypted successfully (${message.length} chars)`, true);
+                        } else {
+                            displayResult('encryption-results', `❌ Message mismatch for: ${message.substring(0, 50)}...`, false);
+                        }
+                    } catch (error) {
+                        displayResult('encryption-results', `❌ Error with message: ${error.message}`, false);
+                    }
+                }
+
+                displayResult('encryption-results', `✅ Encryption test completed: ${successCount}/${testMessages.length} successful`, successCount === testMessages.length);
+
+                peerManager.destroy();
+                log('Encryption/decryption test completed');
+
+            } catch (error) {
+                log(`Encryption test error: ${error.message}`);
+                displayResult('encryption-results', `❌ Error: ${error.message}`, false);
+            }
+        }
+
+        async function runStressTest() {
+            if (!securityManager) {
+                displayResult('stress-results', '❌ Please initialize Security Manager first', false);
+                return;
+            }
+
+            if (stressTestRunning) {
+                displayResult('stress-results', '❌ Stress test already running', false);
+                return;
+            }
+
+            stressTestRunning = true;
+            const resultsEl = document.getElementById('stress-results');
+            const logsEl = document.getElementById('stress-logs');
+            resultsEl.innerHTML = '<div class="loading"></div> Running stress test...';
+            logsEl.innerHTML = '';
+
+            try {
+                // Setup peer connection
+                const peerManager = new SecurityManager();
+                await peerManager.initialize();
+                const peerPublicKeys = peerManager.getPublicKeys();
+                await securityManager.performKeyExchange(peerPublicKeys.ephemeral);
+
+                const totalOperations = 100;
+                let completedOperations = 0;
+                let errors = 0;
+                const startTime = Date.now();
+
+                // Run multiple operations concurrently
+                const promises = [];
+                for (let i = 0; i < totalOperations && stressTestRunning; i++) {
+                    const promise = (async (index) => {
+                        try {
+                            const message = `Stress test message ${index} - ${Date.now()}`;
+                            const encrypted = await securityManager.encryptMessage(message);
+                            const decrypted = await securityManager.decryptMessage(encrypted);
+                            
+                            if (decrypted === message) {
+                                completedOperations++;
+                                if (index % 10 === 0) {
+                                    log(`Completed operation ${index}/${totalOperations}`);
+                                }
+                            } else {
+                                errors++;
+                                log(`Operation ${index} failed: message mismatch`);
+                            }
+                        } catch (error) {
+                            errors++;
+                            log(`Operation ${index} error: ${error.message}`);
+                        }
+                    })(i);
+                    
+                    promises.push(promise);
+                    
+                    // Add small delay to prevent overwhelming
+                    if (i % 10 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                }
+
+                // Wait for all operations to complete
+                await Promise.all(promises);
+
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                const opsPerSecond = (completedOperations / duration * 1000).toFixed(2);
+
+                if (stressTestRunning) {
+                    resultsEl.innerHTML = '';
+                    displayResult('stress-results', '✅ Stress test completed', true);
+                    displayResult('stress-results', `Completed operations: ${completedOperations}/${totalOperations}`, true);
+                    displayResult('stress-results', `Errors: ${errors}`, errors === 0);
+                    displayResult('stress-results', `Duration: ${duration}ms`, true);
+                    displayResult('stress-results', `Operations per second: ${opsPerSecond}`, true);
+                    displayResult('stress-results', `Success rate: ${((completedOperations / totalOperations) * 100).toFixed(1)}%`, completedOperations === totalOperations);
+                }
+
+                peerManager.destroy();
+                log('Stress test completed');
+
+            } catch (error) {
+                log(`Stress test error: ${error.message}`);
+                displayResult('stress-results', `❌ Error: ${error.message}`, false);
+            } finally {
+                stressTestRunning = false;
+            }
+        }
+
+        function stopStressTest() {
+            stressTestRunning = false;
+            displayResult('stress-results', '⏹️ Stress test stopped by user', false);
+            log('Stress test stopped by user');
+        }
+
+        async function testWorkerCommunication() {
+            const resultsEl = document.getElementById('worker-results');
+            resultsEl.innerHTML = '<div class="loading"></div> Testing worker communication...';
+
+            try {
+                // Test direct worker communication
+                const worker = new Worker('/crypto-worker.js');
+                let messageReceived = false;
+                let workerError = false;
+
+                const testPromise = new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        worker.terminate();
+                        reject(new Error('Worker communication timeout'));
+                    }, 5000);
+
+                    worker.onmessage = function(e) {
+                        clearTimeout(timeout);
+                        messageReceived = true;
+                        worker.terminate();
+                        resolve(e.data);
+                    };
+
+                    worker.onerror = function(error) {
+                        clearTimeout(timeout);
+                        workerError = true;
+                        worker.terminate();
+                        reject(error);
+                    };
+
+                    // Send test message
+                    worker.postMessage({
+                        id: 'test-001',
+                        operation: 'benchmark',
+                        data: null
+                    });
+                });
+
+                const result = await testPromise;
+
+                displayResult('worker-results', '✅ Worker communication test successful', true);
+                displayResult('worker-results', `Worker response received: ${!!result}`, true);
+                displayResult('worker-results', `Benchmark result: ${JSON.stringify(result)}`, true);
+
+                log('Worker communication test completed');
+
+            } catch (error) {
+                log(`Worker communication error: ${error.message}`);
+                displayResult('worker-results', `❌ Error: ${error.message}`, false);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -16,6 +16,9 @@ const SecurityManager = class {
     }
     
     getPublicKeys() {
+        if (!this.isInitialized) {
+            throw new Error('Security manager not initialized');
+        }
         return {
             identity: new Array(32).fill(0).map(() => Math.floor(Math.random() * 256)),
             ephemeral: new Array(32).fill(0).map(() => Math.floor(Math.random() * 256))

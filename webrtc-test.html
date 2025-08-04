@@ -31,11 +31,25 @@
         let localConnection;
         let remoteConnection;
         
-        // Configuration for WebRTC
+        // Optimized WebRTC configuration for fast connections
         const configuration = {
             iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' }
-            ]
+                // Primary STUN server (Google - most reliable and fastest)
+                { urls: 'stun:stun.l.google.com:19302' },
+                
+                // Primary TURN server for NAT traversal
+                { 
+                    urls: 'turn:openrelay.metered.ca:80', 
+                    username: 'openrelayproject', 
+                    credential: 'openrelayproject' 
+                }
+            ],
+            
+            // Optimized for speed
+            iceCandidatePoolSize: 2,
+            iceTransportPolicy: 'all',
+            bundlePolicy: 'max-bundle',
+            rtcpMuxPolicy: 'require'
         };
         
         // Start button event handler

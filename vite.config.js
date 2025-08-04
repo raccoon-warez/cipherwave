@@ -11,6 +11,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        maximumFileSizeToCacheInBytes: 5000000, // 5MB
       },
       manifest: {
         name: "CipherWave",
@@ -39,13 +40,63 @@ export default defineConfig({
     minify: "terser",
     sourcemap: true,
     rollupOptions: {
+      input: {
+        main: 'index-optimized.html'
+      },
       output: {
-        manualChunks: {
-          crypto: ["crypto-js", "libsodium-wrappers", "tweetnacl"],
-          webrtc: ["simple-peer"],
+        manualChunks: (id) => {
+          // Core crypto library - use only libsodium-wrappers
+          if (id.includes('libsodium-wrappers')) {
+            return 'crypto-core';
+          }
+          
+          // WebRTC functionality
+          if (id.includes('simple-peer')) {
+            return 'webrtc-core';
+          }
+          
+          // Large UI managers - dynamically imported
+          if (id.includes('file-manager.js') || id.includes('voice-manager.js')) {
+            return 'ui-heavy';
+          }
+          
+          // Mobile-specific code
+          if (id.includes('@capacitor/core') || 
+              id.includes('@capacitor/splash-screen') || 
+              id.includes('@capacitor/status-bar') ||
+              id.includes('mobile-manager.js')) {
+            return 'mobile';
+          }
+          
+          // Vendor libraries
+          if (id.includes('uuid') || id.includes('ws')) {
+            return 'vendor';
+          }
+          
+          // Core managers
+          if (id.includes('security-manager.js') || 
+              id.includes('connection-manager.js') || 
+              id.includes('message-manager.js') ||
+              id.includes('ui-manager.js')) {
+            return 'core';
+          }
+          
+          // Node modules (except already handled ones)
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
         },
+        // Optimize chunk names and hashes
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId
+            ? chunkInfo.facadeModuleId.split('/').pop().replace(/\.[^/.]+$/, '')
+            : 'chunk';
+          return `assets/${facadeModuleId}-[hash].js`;
+        }
       },
     },
+    // Increase chunk size warning limit for crypto libraries
+    chunkSizeWarningLimit: 1000,
   },
   server: {
     port: 3000,
@@ -54,5 +105,14 @@ export default defineConfig({
   preview: {
     port: 4173,
     host: true,
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['libsodium-wrappers', 'simple-peer', 'uuid'],
+    exclude: ['crypto-js', 'tweetnacl'] // Remove duplicate crypto libraries
+  },
+  // Define globals for replaced libraries
+  define: {
+    global: 'globalThis',
   },
 });

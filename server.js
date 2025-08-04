@@ -678,10 +678,14 @@ function isValidMessage(data) {
     if (!data.type || typeof data.type !== 'string') return false;
     if (data.type.length > 50) return false; // Limit type length
     
-    // Check for suspicious properties
+    // Check for suspicious properties (but allow normal object properties)
+    // Only reject if these properties are explicitly set on the object itself
     const dangerousProps = ['__proto__', 'constructor', 'prototype'];
     for (const prop of dangerousProps) {
-        if (prop in data) return false;
+        // Check if the property is an own property (explicitly set) rather than inherited
+        if (Object.prototype.hasOwnProperty.call(data, prop)) {
+            return false;
+        }
     }
     
     // Limit total properties

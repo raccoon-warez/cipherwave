@@ -50,33 +50,46 @@ let userId = null;
 let authenticationState = 'none'; // 'none', 'challenging', 'authenticated'
 let peerChallenge = null;
 
-// Configuration for WebRTC with fallback options
+// Optimized WebRTC configuration for faster connection establishment (2-4s target)
 const configuration = {
     iceServers: [
-        // STUN servers
+        // Primary STUN server (Google - most reliable and fastest)
+        { urls: 'stun:stun.l.google.com:19302' },
+        
+        // Primary TURN server (OpenRelay - most reliable free TURN)
+        { 
+            urls: 'turn:openrelay.metered.ca:80', 
+            username: 'openrelayproject', 
+            credential: 'openrelayproject' 
+        },
+        
+        // Backup TURN server with TCP transport for restrictive networks
+        { 
+            urls: 'turn:openrelay.metered.ca:443?transport=tcp', 
+            username: 'openrelayproject', 
+            credential: 'openrelayproject' 
+        }
+    ],
+    
+    // Optimized ICE configuration for speed
+    iceCandidatePoolSize: 2,  // Reduced from 10 to minimize gathering time
+    iceTransportPolicy: 'all',
+    bundlePolicy: 'max-bundle',
+    rtcpMuxPolicy: 'require'
+};
+
+// Fallback configuration for difficult network conditions
+const fallbackConfiguration = {
+    iceServers: [
+        // Google STUN servers (backup)
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun.stunprotocol.org:3478' },
-        { urls: 'stun:stun.voiparound.com' },
-        { urls: 'stun:stun.voipbuster.com' },
-        { urls: 'stun:stun.voipstunt.com' },
-        { urls: 'stun:stun.xten.com' },
         
-        // TURN servers (for better NAT traversal)
-        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-        { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
-        
-        // Fallback TURN servers
+        // Additional TURN servers for fallback
         { urls: 'turn:freeturn.net:3478', username: 'free', credential: 'free' },
-        { urls: 'turn:freeturn.net:5349', username: 'free', credential: 'free' },
-        { urls: 'turns:freeturn.net:5349', username: 'free', credential: 'free' },
-        
-        // Additional public TURN servers for testing
-        { urls: 'turn:turn.anyfirewall.com:443?transport=tcp', username: 'webrtc', credential: 'webrtc' },
-        { urls: 'turn:turn.bistri.com:80', username: 'homeo', credential: 'homeo' }
+        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
     ],
-    iceCandidatePoolSize: 10,
+    iceCandidatePoolSize: 3,
     iceTransportPolicy: 'all',
     bundlePolicy: 'max-bundle',
     rtcpMuxPolicy: 'require'
@@ -98,12 +111,22 @@ function validateTurnCredentials(iceServers) {
 const validatedIceServers = validateTurnCredentials(configuration.iceServers);
 configuration.iceServers = validatedIceServers;
 
-// Connection timeout values
-const CONNECTION_TIMEOUT = 60000; // 60 seconds
-const ICE_TIMEOUT = 30000; // 30 seconds
+// Optimized connection timeout values for faster establishment
+const CONNECTION_TIMEOUT = 15000; // 15 seconds (reduced from 60s)
+const ICE_TIMEOUT = 8000; // 8 seconds (reduced from 30s)
+const ICE_GATHERING_TIMEOUT = 5000; // 5 seconds for ICE gathering
+const OFFER_ANSWER_TIMEOUT = 3000; // 3 seconds for offer/answer exchange
 
 // Connection state tracking for debugging
 let connectionStateLog = [];
+
+// Connection pooling and reuse optimization
+let connectionPool = {
+    activeConnections: new Map(),
+    connectionAttempts: 0,
+    lastSuccessfulConfig: null,
+    fastConnectionEnabled: true
+};
 
 // List of known signaling servers for automatic discovery
 const knownServers = [
@@ -411,25 +434,36 @@ function logConnectionState(state) {
     }
 }
 
-// Legacy WebRTC connection function (now handled by ConnectionManager)
+// Optimized WebRTC connection function with fast connection logic
 function startConnection() {
     try {
         // Update connection status
         updateConnectionStatus('Establishing peer connection...', 'status-disconnected');
-        logConnectionState('Starting WebRTC connection setup');
+        logConnectionState('Starting optimized WebRTC connection setup');
         
-        // Create peer connection
-        peerConnection = new RTCPeerConnection(configuration);
-        logConnectionState('RTCPeerConnection created');
+        // Use last successful configuration if available, otherwise use optimized default
+        const configToUse = connectionPool.lastSuccessfulConfig || configuration;
+        connectionPool.connectionAttempts++;
         
-        // Set up connection timeout
+        // Create peer connection with optimized configuration
+        peerConnection = new RTCPeerConnection(configToUse);
+        logConnectionState(`RTCPeerConnection created (attempt ${connectionPool.connectionAttempts})`);
+        
+        // Set up optimized connection timeout
         const connectionTimeout = setTimeout(() => {
             if (peerConnection.connectionState !== 'connected' && 
                 peerConnection.connectionState !== 'completed') {
-                logConnectionState('Connection timeout - no connection established');
-                updateConnectionStatus('Connection timeout', 'status-disconnected');
+                logConnectionState('Connection timeout - trying fallback');
+                updateConnectionStatus('Connection timeout, trying fallback...', 'status-disconnected');
                 
-                // Try to restart ICE if connection is still trying
+                // Try fallback configuration if primary fails
+                if (connectionPool.connectionAttempts === 1) {
+                    peerConnection.close();
+                    startConnectionWithFallback();
+                    return;
+                }
+                
+                // If fallback also fails, restart ICE
                 if (peerConnection.iceConnectionState === 'checking' || 
                     peerConnection.iceConnectionState === 'disconnected') {
                     logConnectionState('Attempting ICE restart after timeout');
@@ -438,147 +472,30 @@ function startConnection() {
             }
         }, CONNECTION_TIMEOUT);
         
-        // Log connection state changes
+        // Setup connection handlers
+        setupConnectionHandlers(configToUse);
+        
+        // Clear timeout when connection is established
+        const originalConnectionHandler = peerConnection.onconnectionstatechange;
         peerConnection.onconnectionstatechange = () => {
-            logConnectionState(`Connection state: ${peerConnection.connectionState}`);
-            updateConnectionStatus(`Connection: ${peerConnection.connectionState}`, 'status-disconnected');
-            
-            // Clear timeout if connection is established
+            originalConnectionHandler();
             if (peerConnection.connectionState === 'connected' || 
                 peerConnection.connectionState === 'completed') {
                 clearTimeout(connectionTimeout);
             }
-            
-            // Handle connection failure
-            if (peerConnection.connectionState === 'failed') {
-                logConnectionState('Connection failed, attempting to restart ICE');
-                peerConnection.restartIce();
-            }
-            
-            // Handle disconnected state
-            if (peerConnection.connectionState === 'disconnected') {
-                logConnectionState('Connection disconnected, monitoring for reconnection');
-                // Set a timeout to restart ICE if we don't reconnect quickly
-                setTimeout(() => {
-                    if (peerConnection.connectionState === 'disconnected') {
-                        logConnectionState('Connection still disconnected, attempting to restart ICE');
-                        peerConnection.restartIce();
-                    }
-                }, 10000);
-            }
         };
         
+        // Handle signaling state changes
         peerConnection.onsignalingstatechange = () => {
             logConnectionState(`Signaling state: ${peerConnection.signalingState}`);
         };
         
-        peerConnection.oniceconnectionstatechange = () => {
-            logConnectionState(`ICE connection state: ${peerConnection.iceConnectionState}`);
-            
-            // Handle ICE connection failure
-            if (peerConnection.iceConnectionState === 'failed') {
-                logConnectionState('ICE connection failed, attempting to restart ICE');
-                peerConnection.restartIce();
-            }
-            
-            // Handle ICE disconnection
-            if (peerConnection.iceConnectionState === 'disconnected') {
-                logConnectionState('ICE connection disconnected, monitoring for reconnection');
-            }
-        };
-        
-        peerConnection.onicegatheringstatechange = () => {
-            logConnectionState(`ICE gathering state: ${peerConnection.iceGatheringState}`);
-            
-            // Set ICE gathering timeout
-            if (peerConnection.iceGatheringState === 'gathering') {
-                setTimeout(() => {
-                    if (peerConnection.iceGatheringState === 'gathering') {
-                        logConnectionState('ICE gathering timeout - forcing completion');
-                        // Force completion by creating a null candidate
-                        peerConnection.onicecandidate({ candidate: null });
-                    }
-                }, ICE_TIMEOUT);
-            }
-        };
-        
-        // Handle ICE candidates with better error handling
-        peerConnection.onicecandidate = event => {
-            if (event.candidate) {
-                logConnectionState(`ICE candidate gathered: ${event.candidate.type} (${event.candidate.protocol})`);
-                signaling.send({
-                    type: 'candidate',
-                    candidate: event.candidate
-                });
-            } else {
-                logConnectionState('ICE candidate gathering complete');
-            }
-        };
-        
-        // Handle ICE candidate errors with fallback
-        peerConnection.onicecandidateerror = event => {
-            logConnectionState(`ICE candidate error: ${event.errorCode} - ${event.errorText} (${event.url})`);
-            console.error('ICE candidate error:', event);
-            
-            // Try to continue with available candidates
-            if (peerConnection.iceGatheringState === 'complete') {
-                logConnectionState('ICE gathering completed despite errors');
-            }
-            
-            // If we're still gathering, try to restart ICE after a delay
-            if (peerConnection.iceGatheringState === 'gathering') {
-                logConnectionState('Attempting to restart ICE after candidate error');
-                setTimeout(() => {
-                    if (peerConnection.iceGatheringState === 'gathering') {
-                        logConnectionState('Forcing ICE gathering completion after error');
-                        // Force completion by creating a null candidate
-                        peerConnection.onicecandidate({ candidate: null });
-                    }
-                }, 5000);
-            }
-        };
-        
-        // Handle data channel
+        // Handle data channel and offer creation
         if (isInitiator) {
             logConnectionState('Creating data channel (initiator)');
-            // Create data channel for initiator with better configuration
-            dataChannel = peerConnection.createDataChannel('messaging', {
-                ordered: true,
-                maxRetransmits: 3
-            });
-            setupDataChannel(dataChannel);
-            
-            // Create offer with better configuration
-            logConnectionState('Creating offer');
-            peerConnection.createOffer({
-                offerToReceiveAudio: false,
-                offerToReceiveVideo: false
-            })
-                .then(offer => {
-                    logConnectionState('Offer created, setting local description');
-                    return peerConnection.setLocalDescription(offer);
-                })
-                .then(() => {
-                    logConnectionState('Local description set, sending offer');
-                    signaling.send({
-                        type: 'offer',
-                        offer: peerConnection.localDescription
-                    });
-                })
-                .catch(error => {
-                    logConnectionState(`Error creating offer: ${error.message}`);
-                    console.error('Error creating offer:', error);
-                    updateConnectionStatus('Connection failed', 'status-disconnected');
-                });
+            createOfferWithTimeout();
         } else {
             logConnectionState('Waiting for data channel (non-initiator)');
-            // Handle incoming data channel for non-initiator with better configuration
-            peerConnection.ondatachannel = event => {
-                logConnectionState('Data channel received');
-                dataChannel = event.channel;
-                dataChannel.binaryType = 'arraybuffer';
-                setupDataChannel(dataChannel);
-            };
         }
         
     } catch (error) {
@@ -586,6 +503,132 @@ function startConnection() {
         console.error('Error starting connection:', error);
         updateConnectionStatus('Connection failed', 'status-disconnected');
     }
+}
+
+// Fallback connection function with alternative configuration
+function startConnectionWithFallback() {
+    logConnectionState('Starting connection with fallback configuration');
+    connectionPool.connectionAttempts++;
+    
+    // Use fallback configuration
+    peerConnection = new RTCPeerConnection(fallbackConfiguration);
+    logConnectionState(`RTCPeerConnection created with fallback (attempt ${connectionPool.connectionAttempts})`);
+    
+    // Set the same event handlers but with fallback config reference
+    setupConnectionHandlers(fallbackConfiguration);
+    
+    // Continue with connection setup
+    if (isInitiator) {
+        createOfferWithTimeout();
+    }
+}
+
+// Setup connection handlers (extracted for reuse)
+function setupConnectionHandlers(config) {
+    // Connection state change handler
+    peerConnection.onconnectionstatechange = () => {
+        logConnectionState(`Connection state: ${peerConnection.connectionState}`);
+        updateConnectionStatus(`Connection: ${peerConnection.connectionState}`, 'status-disconnected');
+        
+        if (peerConnection.connectionState === 'connected' || 
+            peerConnection.connectionState === 'completed') {
+            logConnectionState('Connection established successfully');
+            connectionPool.lastSuccessfulConfig = config;
+        }
+        
+        if (peerConnection.connectionState === 'failed') {
+            logConnectionState('Connection failed, attempting to restart ICE');
+            peerConnection.restartIce();
+        }
+    };
+    
+    // ICE connection state handler
+    peerConnection.oniceconnectionstatechange = () => {
+        logConnectionState(`ICE connection state: ${peerConnection.iceConnectionState}`);
+        
+        if (peerConnection.iceConnectionState === 'failed') {
+            logConnectionState('ICE connection failed, attempting to restart ICE');
+            peerConnection.restartIce();
+        }
+    };
+    
+    // ICE gathering state handler
+    peerConnection.onicegatheringstatechange = () => {
+        logConnectionState(`ICE gathering state: ${peerConnection.iceGatheringState}`);
+        
+        if (peerConnection.iceGatheringState === 'gathering') {
+            setTimeout(() => {
+                if (peerConnection.iceGatheringState === 'gathering') {
+                    logConnectionState('ICE gathering timeout - forcing completion');
+                    peerConnection.onicecandidate({ candidate: null });
+                }
+            }, ICE_GATHERING_TIMEOUT);
+        } else if (peerConnection.iceGatheringState === 'complete') {
+            connectionPool.lastSuccessfulConfig = config;
+        }
+    };
+    
+    // ICE candidate handler
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            logConnectionState(`ICE candidate gathered: ${event.candidate.type}`);
+            signaling.send({
+                type: 'candidate',
+                candidate: event.candidate
+            });
+        } else {
+            logConnectionState('ICE candidate gathering complete');
+        }
+    };
+    
+    // Data channel handler
+    if (isInitiator) {
+        dataChannel = peerConnection.createDataChannel('messaging', {
+            ordered: true,
+            maxRetransmits: 3
+        });
+        setupDataChannel(dataChannel);
+    } else {
+        peerConnection.ondatachannel = event => {
+            logConnectionState('Data channel received');
+            dataChannel = event.channel;
+            dataChannel.binaryType = 'arraybuffer';
+            setupDataChannel(dataChannel);
+        };
+    }
+}
+
+// Create offer with timeout optimization
+function createOfferWithTimeout() {
+    logConnectionState('Creating offer with timeout');
+    
+    const offerTimeout = setTimeout(() => {
+        logConnectionState('Offer creation timeout');
+        updateConnectionStatus('Offer timeout', 'status-disconnected');
+    }, OFFER_ANSWER_TIMEOUT);
+    
+    peerConnection.createOffer({
+        offerToReceiveAudio: false,
+        offerToReceiveVideo: false
+    })
+    .then(offer => {
+        clearTimeout(offerTimeout);
+        logConnectionState('Offer created, setting local description');
+        return peerConnection.setLocalDescription(offer);
+    })
+    .then(() => {
+        logConnectionState('Local description set, sending offer');
+        signaling.send({
+            type: 'offer',
+            offer: peerConnection.localDescription
+        });
+    })
+    .catch(error => {
+        clearTimeout(offerTimeout);
+        logConnectionState(`Error creating offer: ${error.message}`);
+        console.error('Error creating offer:', error);
+        updateConnectionStatus('Connection failed', 'status-disconnected');
+    });
 }
 
 // Handle signaling messages

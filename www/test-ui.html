@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherWave UI Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>CipherWave UI Test</h1>
+    
+    <div class="test-section">
+        <h2>UI Element Tests</h2>
+        <button id="testConnectionBtn" class="btn-primary">Test Connection Modal</button>
+        <button id="testMessageBtn" class="btn-primary">Test Message Display</button>
+        <button id="testAllBtn" class="btn-success">Run All Tests</button>
+        <button id="clearBtn" class="btn-danger">Clear Results</button>
+    </div>
+    
+    <div id="testResults"></div>
+    
+    <script>
+        // Test functions
+        function testConnectionModal() {
+            const modal = document.getElementById('connection-modal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.classList.add('no-scroll');
+                addTestResult('Connection Modal', 'Modal opened successfully', 'success');
+                
+                // Close after 1 second
+                setTimeout(() => {
+                    modal.classList.remove('active');
+                    document.body.classList.remove('no-scroll');
+                }, 1000);
+            } else {
+                addTestResult('Connection Modal', 'Modal element not found', 'error');
+            }
+        }
+        
+        function testMessageDisplay() {
+            const messagesContainer = document.getElementById('messages-container');
+            if (messagesContainer) {
+                const testMessage = 'This is a test message';
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message sent';
+                messageElement.innerHTML = `
+                    <div class="message-content">${testMessage}</div>
+                    <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                `;
+                messagesContainer.appendChild(messageElement);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                addTestResult('Message Display', 'Message displayed successfully', 'success');
+            } else {
+                addTestResult('Message Display', 'Messages container not found', 'error');
+            }
+        }
+        
+        function addTestResult(testName, message, type) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `<strong>${testName}:</strong> ${message}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function clearResults() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '';
+        }
+        
+        function runAllTests() {
+            testConnectionModal();
+            setTimeout(testMessageDisplay, 1500);
+        }
+        
+        // Event listeners
+        document.getElementById('testConnectionBtn').addEventListener('click', testConnectionModal);
+        document.getElementById('testMessageBtn').addEventListener('click', testMessageDisplay);
+        document.getElementById('testAllBtn').addEventListener('click', runAllTests);
+        document.getElementById('clearBtn').addEventListener('click', clearResults);
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            addTestResult('Initialization', 'UI Test Page Loaded Successfully', 'success');
+        });
+    </script>
+</body>
+</html>

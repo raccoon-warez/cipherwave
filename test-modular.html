@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherWave Modular Architecture Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="src/styles/base.css">
+    <link rel="stylesheet" href="src/styles/components.css">
+    <link rel="stylesheet" href="src/styles/responsive.css">
+    <style>
+        body {
+            font-family: var(--font-family);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .test-section {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .test-section h3 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .component-test {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .component-test h4 {
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        
+        .test-result {
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            margin-top: 0.5rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        .test-result.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+        }
+        
+        .test-result.error {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--danger);
+        }
+        
+        .test-output {
+            background: var(--bg-chat);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .log-entry {
+            margin-bottom: 0.25rem;
+            padding: 0.25rem;
+            border-left: 3px solid var(--border-color);
+            padding-left: 0.5rem;
+        }
+        
+        .log-entry.info {
+            border-left-color: var(--info);
+        }
+        
+        .log-entry.success {
+            border-left-color: var(--success);
+        }
+        
+        .log-entry.error {
+            border-left-color: var(--danger);
+        }
+        
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .test-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🔐 CipherWave Modular Architecture Test</h1>
+            <p>Testing the new component-based architecture</p>
+        </div>
+        
+        <div class="test-grid">
+            <div class="test-section">
+                <h3>Component Tests</h3>
+                
+                <div class="component-test">
+                    <h4>BaseComponent</h4>
+                    <button class="secondary-btn" onclick="testBaseComponent()">Test Base</button>
+                    <div id="base-result" class="test-result"></div>
+                </div>
+                
+                <div class="component-test">
+                    <h4>SidebarComponent</h4>
+                    <button class="secondary-btn" onclick="testSidebarComponent()">Test Sidebar</button>
+                    <div id="sidebar-result" class="test-result"></div>
+                </div>
+                
+                <div class="component-test">
+                    <h4>ChatComponent</h4>
+                    <button class="secondary-btn" onclick="testChatComponent()">Test Chat</button>
+                    <div id="chat-result" class="test-result"></div>
+                </div>
+                
+                <div class="component-test">
+                    <h4>InputComponent</h4>
+                    <button class="secondary-btn" onclick="testInputComponent()">Test Input</button>
+                    <div id="input-result" class="test-result"></div>
+                </div>
+                
+                <div class="component-test">
+                    <h4>FileComponent</h4>
+                    <button class="secondary-btn" onclick="testFileComponent()">Test File</button>
+                    <div id="file-result" class="test-result"></div>
+                </div>
+                
+                <div class="component-test">
+                    <h4>SettingsComponent</h4>
+                    <button class="secondary-btn" onclick="testSettingsComponent()">Test Settings</button>
+                    <div id="settings-result" class="test-result"></div>
+                </div>
+                
+                <div class="test-buttons">
+                    <button class="primary-btn" onclick="runAllTests()">
+                        <i class="fas fa-play"></i>
+                        Run All Tests
+                    </button>
+                    <button class="secondary-btn" onclick="clearResults()">
+                        <i class="fas fa-trash"></i>
+                        Clear Results
+                    </button>
+                </div>
+            </div>
+            
+            <div class="test-section">
+                <h3>Test Output</h3>
+                <div id="test-output" class="test-output">
+                    <div class="log-entry info">CipherWave Component Test Suite - Ready</div>
+                    <div class="log-entry info">Click "Run All Tests" to begin testing</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Live Component Demo</h3>
+            <div id="demo-container" style="min-height: 300px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem;">
+                <p>Components will be rendered here during testing</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Load components for testing -->
+    <script src="src/components/BaseComponent.js"></script>
+    <script src="src/components/SidebarComponent.js"></script>
+    <script src="src/components/ChatComponent.js"></script>
+    <script src="src/components/InputComponent.js"></script>
+    <script src="src/components/FileComponent.js"></script>
+    <script src="src/components/SettingsComponent.js"></script>
+    <script src="src/utils/ComponentLoader.js"></script>
+    
+    <script>
+        // Test utilities
+        function log(message, type = 'info') {
+            const output = document.getElementById('test-output');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(entry);
+            output.scrollTop = output.scrollHeight;
+            console.log(`[Test] ${message}`);
+        }
+        
+        function setResult(elementId, success, message) {
+            const element = document.getElementById(elementId);
+            element.className = `test-result ${success ? 'success' : 'error'}`;
+            element.textContent = message;
+        }
+        
+        function clearResults() {
+            const results = document.querySelectorAll('.test-result');
+            results.forEach(result => {
+                result.className = 'test-result';
+                result.textContent = '';
+            });
+            
+            const output = document.getElementById('test-output');
+            output.innerHTML = '<div class="log-entry info">Test results cleared</div>';
+        }
+        
+        // Component tests
+        function testBaseComponent() {
+            log('Testing BaseComponent...', 'info');
+            
+            try {
+                if (typeof BaseComponent === 'undefined') {
+                    throw new Error('BaseComponent not loaded');
+                }
+                
+                const container = document.createElement('div');
+                const component = new BaseComponent(container, { id: 'test-base' });
+                
+                // Test basic functionality
+                if (!component.container) throw new Error('Container not set');
+                if (!component.options) throw new Error('Options not set');
+                if (typeof component.render !== 'function') throw new Error('Render method missing');
+                if (typeof component.destroy !== 'function') throw new Error('Destroy method missing');
+                
+                component.destroy();
+                setResult('base-result', true, 'All tests passed');
+                log('BaseComponent tests passed', 'success');
+                
+            } catch (error) {
+                setResult('base-result', false, error.message);
+                log(`BaseComponent test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testSidebarComponent() {
+            log('Testing SidebarComponent...', 'info');
+            
+            try {
+                if (typeof SidebarComponent === 'undefined') {
+                    throw new Error('SidebarComponent not loaded');
+                }
+                
+                const container = document.createElement('div');
+                const component = new SidebarComponent(container);
+                
+                // Test specific functionality
+                if (typeof component.setActiveNav !== 'function') throw new Error('setActiveNav method missing');
+                if (typeof component.setConnectionStatus !== 'function') throw new Error('setConnectionStatus method missing');
+                if (typeof component.setUnreadCount !== 'function') throw new Error('setUnreadCount method missing');
+                
+                // Test state management
+                component.setActiveNav('settings');
+                if (component.state.activeNav !== 'settings') throw new Error('State not updated');
+                
+                component.destroy();
+                setResult('sidebar-result', true, 'All tests passed');
+                log('SidebarComponent tests passed', 'success');
+                
+            } catch (error) {
+                setResult('sidebar-result', false, error.message);
+                log(`SidebarComponent test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testChatComponent() {
+            log('Testing ChatComponent...', 'info');
+            
+            try {
+                if (typeof ChatComponent === 'undefined') {
+                    throw new Error('ChatComponent not loaded');
+                }
+                
+                const container = document.createElement('div');
+                const component = new ChatComponent(container);
+                
+                // Test specific functionality
+                if (typeof component.addMessage !== 'function') throw new Error('addMessage method missing');
+                if (typeof component.updateMessageStatus !== 'function') throw new Error('updateMessageStatus method missing');
+                if (typeof component.clearMessages !== 'function') throw new Error('clearMessages method missing');
+                
+                // Test message handling
+                component.addMessage({
+                    id: 'test-1',
+                    content: 'Test message',
+                    type: 'sent',
+                    timestamp: Date.now()
+                });
+                
+                if (component.state.messages.length !== 1) throw new Error('Message not added to state');
+                
+                component.destroy();
+                setResult('chat-result', true, 'All tests passed');
+                log('ChatComponent tests passed', 'success');
+                
+            } catch (error) {
+                setResult('chat-result', false, error.message);
+                log(`ChatComponent test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testInputComponent() {
+            log('Testing InputComponent...', 'info');
+            
+            try {
+                if (typeof InputComponent === 'undefined') {
+                    throw new Error('InputComponent not loaded');
+                }
+                
+                const container = document.createElement('div');
+                const component = new InputComponent(container, {
+                    label: 'Test Input',
+                    placeholder: 'Enter text...',
+                    required: true
+                });
+                
+                // Test specific functionality
+                if (typeof component.setValue !== 'function') throw new Error('setValue method missing');
+                if (typeof component.getValue !== 'function') throw new Error('getValue method missing');
+                if (typeof component.validate !== 'function') throw new Error('validate method missing');
+                if (typeof component.addValidator !== 'function') throw new Error('addValidator method missing');
+                
+                // Test value handling
+                component.setValue('test value');
+                if (component.getValue() !== 'test value') throw new Error('Value not set correctly');
+                
+                // Test validation
+                component.addValidator((value) => value.length > 5, 'Must be longer than 5 characters');
+                const isValid = component.validate();
+                if (!isValid) throw new Error('Validation failed unexpectedly');
+                
+                component.destroy();
+                setResult('input-result', true, 'All tests passed');
+                log('InputComponent tests passed', 'success');
+                
+            } catch (error) {
+                setResult('input-result', false, error.message);
+                log(`InputComponent test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testFileComponent() {
+            log('Testing FileComponent...', 'info');
+            
+            try {
+                if (typeof FileComponent === 'undefined') {
+                    throw new Error('FileComponent not loaded');
+                }
+                
+                const container = document.createElement('div');
+                const component = new FileComponent(container);
+                
+                // Test specific functionality
+                if (typeof component.processFiles !== 'function') throw new Error('processFiles method missing');
+                if (typeof component.addFiles !== 'function') throw new Error('addFiles method missing');
+                if (typeof component.getSelectedFiles !== 'function') throw new Error('getSelectedFiles method missing');
+                if (typeof component.removeFile !== 'function') throw new Error('removeFile method missing');
+                
+                // Test file management
+                const mockFile = {
+                    id: 'test-file-1',
+                    name: 'test.txt',
+                    size: 1024,
+                    type: 'text/plain',
+                    data: new ArrayBuffer(1024)
+                };
+                
+                component.addFiles([mockFile]);
+                if (component.state.files.length !== 1) throw new Error('File not added to state');
+                
+                const selectedFiles = component.getSelectedFiles();
+                if (!Array.isArray(selectedFiles)) throw new Error('getSelectedFiles should return array');
+                
+                component.destroy();
+                setResult('file-result', true, 'All tests passed');
+                log('FileComponent tests passed', 'success');
+                
+            } catch (error) {
+                setResult('file-result', false, error.message);
+                log(`FileComponent test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testSettingsComponent() {
+            log('Testing SettingsComponent...', 'info');
+            
+            try {
+                if (typeof SettingsComponent === 'undefined') {
+                    throw new Error('SettingsComponent not loaded');
+                }
+                
+                const container = document.createElement('div');
+                const component = new SettingsComponent(container);
+                
+                // Test specific functionality
+                if (typeof component.updateSetting !== 'function') throw new Error('updateSetting method missing');
+                if (typeof component.getSetting !== 'function') throw new Error('getSetting method missing');
+                if (typeof component.saveSettings !== 'function') throw new Error('saveSettings method missing');
+                if (typeof component.resetSettings !== 'function') throw new Error('resetSettings method missing');
+                
+                // Test setting management
+                component.updateSetting('general', 'theme', 'light');
+                const theme = component.getSetting('general', 'theme');
+                if (theme !== 'light') throw new Error('Setting not updated correctly');
+                
+                if (!component.isDirty()) throw new Error('Component should be marked as dirty after changes');
+                
+                component.destroy();
+                setResult('settings-result', true, 'All tests passed');
+                log('SettingsComponent tests passed', 'success');
+                
+            } catch (error) {
+                setResult('settings-result', false, error.message);
+                log(`SettingsComponent test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Run all tests
+        async function runAllTests() {
+            log('Starting comprehensive test suite...', 'info');
+            clearResults();
+            
+            const tests = [
+                testBaseComponent,
+                testSidebarComponent,
+                testChatComponent,
+                testInputComponent,
+                testFileComponent,
+                testSettingsComponent
+            ];
+            
+            let passed = 0;
+            let failed = 0;
+            
+            for (const test of tests) {
+                try {
+                    await test();
+                    passed++;
+                } catch (error) {
+                    failed++;
+                    log(`Test failed: ${error.message}`, 'error');
+                }
+                
+                // Small delay between tests
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            log(`Test suite completed: ${passed} passed, ${failed} failed`, passed === tests.length ? 'success' : 'error');
+            
+            // Demo component rendering
+            if (passed > 0) {
+                demoComponents();
+            }
+        }
+        
+        // Demo component functionality
+        function demoComponents() {
+            log('Creating component demo...', 'info');
+            
+            const demoContainer = document.getElementById('demo-container');
+            demoContainer.innerHTML = '';
+            
+            // Create a mini sidebar demo
+            const sidebarDemo = document.createElement('div');
+            sidebarDemo.style.cssText = 'width: 200px; margin-bottom: 1rem;';
+            demoContainer.appendChild(sidebarDemo);
+            
+            const sidebar = new SidebarComponent(sidebarDemo, {
+                showUserProfile: false,
+                collapsible: false
+            });
+            
+            sidebar.setConnectionStatus('connected');
+            sidebar.setUnreadCount(3);
+            
+            // Create a mini input demo
+            const inputDemo = document.createElement('div');
+            inputDemo.style.cssText = 'margin-bottom: 1rem;';
+            demoContainer.appendChild(inputDemo);
+            
+            const input = new InputComponent(inputDemo, {
+                label: 'Demo Input',
+                placeholder: 'Type something...',
+                showValidation: true
+            });
+            
+            input.addValidator((value) => value.length > 0, 'Please enter some text');
+            
+            log('Component demo created successfully', 'success');
+        }
+        
+        // Initialize test environment
+        document.addEventListener('DOMContentLoaded', function() {
+            log('CipherWave Component Test Suite initialized', 'success');
+            log('All component classes loaded successfully', 'success');
+            log('Ready to run tests!', 'info');
+        });
+    </script>
+</body>
+</html>
