@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherWave Advanced Testing Interface</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6C63FF;
+            --primary-dark: #5a52e0;
+            --background: #181A20;
+            --card-bg: #23263A;
+            --text-primary: #E3E6ED;
+            --text-secondary: #A3A8C9;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --danger: #F44336;
+            --info: #2196F3;
+            --border-radius: 12px;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text-primary);
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+        }
+
+        .test-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .test-section h2 i {
+            margin-right: 10px;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .test-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .test-card h3 {
+            margin-top: 0;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .test-card h3 i {
+            margin-right: 10px;
+        }
+
+        .test-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-secondary {
+            background: var(--info);
+        }
+
+        .btn-secondary:hover {
+            background: #0b7dda;
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #3d8b40;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .results-container {
+            margin-top: 30px;
+        }
+
+        .result-item {
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .result-item.passed {
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid var(--success);
+        }
+
+        .result-item.failed {
+            background: rgba(244, 67, 54, 0.1);
+            border-left: 4px solid var(--danger);
+        }
+
+        .result-item.info {
+            background: rgba(33, 150, 243, 0.1);
+            border-left: 4px solid var(--info);
+        }
+
+        .result-icon {
+            font-size: 1.2rem;
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .result-content {
+            flex: 1;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .result-details {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .console-output {
+            background: #1e1e1e;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #d4d4d4;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .console-line {
+            margin-bottom: 5px;
+        }
+
+        .console-info {
+            color: #9cdcfe;
+        }
+
+        .console-success {
+            color: #b5cea8;
+        }
+
+        .console-error {
+            color: #f48771;
+        }
+
+        .console-warning {
+            color: #d7ba7d;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .summary {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .summary-box {
+            text-align: center;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            flex: 1;
+            margin: 0 10px 10px 10px;
+            min-width: 150px;
+        }
+
+        .summary-box.passed {
+            background: rgba(76, 175, 80, 0.15);
+            border: 1px solid var(--success);
+        }
+
+        .summary-box.failed {
+            background: rgba(244, 67, 54, 0.15);
+            border: 1px solid var(--danger);
+        }
+
+        .summary-box.info {
+            background: rgba(33, 150, 243, 0.15);
+            border: 1px solid var(--info);
+        }
+
+        .summary-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .summary-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary {
+                flex-direction: column;
+            }
+            
+            .summary-box {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-vial"></i> CipherWave Advanced Testing Interface</h1>
+            <p>Comprehensive testing suite for all CipherWave improvements</p>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-tachometer-alt"></i> Test Dashboard</h2>
+            
+            <div class="summary">
+                <div class="summary-box passed">
+                    <div class="summary-number" id="passed-count">0</div>
+                    <div class="summary-label">PASSED</div>
+                </div>
+                <div class="summary-box failed">
+                    <div class="summary-number" id="failed-count">0</div>
+                    <div class="summary-label">FAILED</div>
+                </div>
+                <div class="summary-box info">
+                    <div class="summary-number" id="total-count">0</div>
+                    <div class="summary-label">TOTAL</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+
+            <div style="text-align: center;">
+                <button class="btn" id="run-all-tests-btn">
+                    <i class="fas fa-play"></i> Run All Advanced Tests
+                </button>
+                <button class="btn btn-secondary" id="generate-report-btn" disabled>
+                    <i class="fas fa-file-alt"></i> Generate Report
+                </button>
+                <button class="btn btn-success" id="clear-results-btn">
+                    <i class="fas fa-trash"></i> Clear Results
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-flask"></i> Test Categories</h2>
+            
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3><i class="fas fa-tachometer-alt"></i> Performance Tests</h3>
+                    <p>Measure execution time, memory usage, and encryption performance.</p>
+                    <button class="btn" id="run-performance-tests">
+                        <i class="fas fa-play"></i> Run Tests
+                    </button>
+                </div>
+                
+                <div class="test-card">
+                    <h3><i class="fas fa-stress"></i> Stress Tests</h3>
+                    <p>Test concurrent connections, message volume, and memory leaks.</p>
+                    <button class="btn" id="run-stress-tests">
+                        <i class="fas fa-play"></i> Run Tests
+                    </button>
+                </div>
+                
+                <div class="test-card">
+                    <h3><i class="fas fa-shield-alt"></i> Security Tests</h3>
+                    <p>Validate encryption strength, input validation, and room ID validation.</p>
+                    <button class="btn" id="run-security-tests">
+                        <i class="fas fa-play"></i> Run Tests
+                    </button>
+                </div>
+                
+                <div class="test-card">
+                    <h3><i class="fas fa-network-wired"></i> Network Tests</h3>
+                    <p>Test WebSocket connections, HTTP connectivity, and bandwidth.</p>
+                    <button class="btn" id="run-network-tests">
+                        <i class="fas fa-play"></i> Run Tests
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-chart-bar"></i> Test Results</h2>
+            
+            <div class="results-container" id="results-container">
+                <div class="result-item info">
+                    <div class="result-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="result-content">
+                        <div class="result-title">Ready to Run Tests</div>
+                        <div class="result-details">Click "Run All Advanced Tests" to begin comprehensive testing</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-terminal"></i> Console Output</h2>
+            <div class="console-output" id="console-output">
+                <div class="console-line console-info">Ready to run advanced tests. Click "Run All Advanced Tests" to begin.</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="enhanced-security.js"></script>
+    <script src="advanced-testing.js"></script>
+    <script>
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleOutput = document.getElementById('console-output');
+        
+        console.log = function() {
+            originalLog.apply(console, arguments);
+            addToConsoleOutput('log', Array.from(arguments).join(' '));
+        };
+        
+        console.error = function() {
+            originalError.apply(console, arguments);
+            addToConsoleOutput('error', Array.from(arguments).join(' '));
+        };
+        
+        console.warn = function() {
+            originalError.apply(console, arguments);
+            addToConsoleOutput('warning', Array.from(arguments).join(' '));
+        };
+        
+        function addToConsoleOutput(type, message) {
+            const line = document.createElement('div');
+            line.className = `console-line console-${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleOutput.appendChild(line);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        // Test state management
+        const testState = {
+            passed: 0,
+            failed: 0,
+            total: 0,
+            results: []
+        };
+        
+        function updateTestState() {
+            document.getElementById('passed-count').textContent = testState.passed;
+            document.getElementById('failed-count').textContent = testState.failed;
+            document.getElementById('total-count').textContent = testState.total;
+            
+            const progress = testState.total > 0 ? (testState.passed / testState.total) * 100 : 0;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+        }
+        
+        function addTestResult(result) {
+            testState.results.push(result);
+            
+            if (result.success || result.successRate >= 90) {
+                testState.passed++;
+            } else {
+                testState.failed++;
+            }
+            testState.total++;
+            
+            updateTestState();
+            displayTestResult(result);
+        }
+        
+        function displayTestResult(result) {
+            const container = document.getElementById('results-container');
+            
+            // Remove initial message if it's the first result
+            if (testState.results.length === 1) {
+                container.innerHTML = '';
+            }
+            
+            const resultElement = document.createElement('div');
+            resultElement.className = `result-item ${result.success || result.successRate >= 90 ? 'passed' : 'failed'}`;
+            
+            const icon = result.success || result.successRate >= 90 ? 
+                '<i class="fas fa-check-circle"></i>' : 
+                '<i class="fas fa-times-circle"></i>';
+            
+            const title = result.test || 'Unnamed Test';
+            const details = JSON.stringify(result, null, 2);
+            
+            resultElement.innerHTML = `
+                <div class="result-icon">${icon}</div>
+                <div class="result-content">
+                    <div class="result-title">${title}</div>
+                    <div class="result-details">${details.substring(0, 100)}${details.length > 100 ? '...' : ''}</div>
+                </div>
+            `;
+            
+            container.appendChild(resultElement);
+        }
+        
+        function clearResults() {
+            testState.passed = 0;
+            testState.failed = 0;
+            testState.total = 0;
+            testState.results = [];
+            
+            updateTestState();
+            
+            const container = document.getElementById('results-container');
+            container.innerHTML = `
+                <div class="result-item info">
+                    <div class="result-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="result-content">
+                        <div class="result-title">Ready to Run Tests</div>
+                        <div class="result-details">Click "Run All Advanced Tests" to begin comprehensive testing</div>
+                    </div>
+                </div>
+            `;
+            
+            consoleOutput.innerHTML = `
+                <div class="console-line console-info">Results cleared. Ready to run advanced tests.</div>
+            `;
+        }
+        
+        // Initialize advanced tester
+        let advancedTester;
+        if (typeof CipherWaveAdvancedTesting !== 'undefined') {
+            advancedTester = new CipherWaveAdvancedTesting.AdvancedTester();
+        } else {
+            console.error('Advanced testing module not loaded');
+        }
+        
+        // Test functions
+        async function runAllTests() {
+            const runButton = document.getElementById('run-all-tests-btn');
+            runButton.disabled = true;
+            runButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running Tests...';
+            
+            document.getElementById('generate-report-btn').disabled = true;
+            
+            console.log('Starting CipherWave Advanced Test Suite...\n');
+            
+            try {
+                const results = await advancedTester.runAllTests();
+                
+                // Add results to display
+                for (const result of results) {
+                    addTestResult(result);
+                }
+                
+                console.log('\n=== Advanced Test Suite Complete ===');
+                console.log(`Passed: ${testState.passed}/${testState.total}`);
+                console.log(`Failed: ${testState.failed}/${testState.total}`);
+                
+                if (testState.failed === 0) {
+                    console.log('🎉 All tests passed! CipherWave is working correctly.');
+                } else {
+                    console.log('⚠️  Some tests failed. Please check the results for details.');
+                }
+                
+                document.getElementById('generate-report-btn').disabled = false;
+            } catch (error) {
+                console.error('Error running tests:', error);
+                addTestResult({
+                    test: 'Test Suite Error',
+                    success: false,
+                    error: error.message
+                });
+            }
+            
+            runButton.disabled = false;
+            runButton.innerHTML = '<i class="fas fa-redo"></i> Run Tests Again';
+        }
+        
+        async function runPerformanceTests() {
+            console.log('Running performance tests...');
+            
+            try {
+                const benchmark = new CipherWaveAdvancedTesting.PerformanceBenchmark();
+                
+                // Test encryption performance
+                const encryptionResult = await benchmark.benchmarkEncryption(
+                    'Test message for encryption benchmark', 
+                    'test-key-1234567890',
+                    50
+                );
+                
+                if (encryptionResult) {
+                    addTestResult(encryptionResult.encryption);
+                    addTestResult(encryptionResult.decryption);
+                }
+                
+                console.log('Performance tests completed.');
+            } catch (error) {
+                console.error('Error in performance tests:', error);
+                addTestResult({
+                    test: 'Performance Tests Error',
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+        
+        async function runStressTests() {
+            console.log('Running stress tests...');
+            
+            try {
+                const stressTester = new CipherWaveAdvancedTesting.StressTester();
+                
+                // Test concurrent connections
+                const concurrentResult = await stressTester.testConcurrentConnections(3);
+                addTestResult(concurrentResult);
+                
+                // Test message volume
+                const volumeResult = await stressTester.testMessageVolume(50);
+                addTestResult(volumeResult);
+                
+                console.log('Stress tests completed.');
+            } catch (error) {
+                console.error('Error in stress tests:', error);
+                addTestResult({
+                    test: 'Stress Tests Error',
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+        
+        async function runSecurityTests() {
+            console.log('Running security tests...');
+            
+            try {
+                const securityTester = new CipherWaveAdvancedTesting.SecurityTester();
+                
+                // Test encryption strength
+                const encryptionResult = securityTester.testEncryptionStrength();
+                if (encryptionResult) addTestResult(encryptionResult);
+                
+                // Test input validation
+                const inputValidationResult = securityTester.testInputValidation();
+                if (inputValidationResult) addTestResult(inputValidationResult);
+                
+                // Test room ID validation
+                const roomIdValidationResult = securityTester.testRoomIdValidation();
+                if (roomIdValidationResult) addTestResult(roomIdValidationResult);
+                
+                console.log('Security tests completed.');
+            } catch (error) {
+                console.error('Error in security tests:', error);
+                addTestResult({
+                    test: 'Security Tests Error',
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+        
+        async function runNetworkTests() {
+            console.log('Running network tests...');
+            
+            try {
+                const networkTester = new CipherWaveAdvancedTesting.NetworkTester();
+                
+                // Test HTTP connectivity
+                const httpResult = await networkTester.testHttpConnectivity('https://httpbin.org/get');
+                addTestResult(httpResult);
+                
+                // Test bandwidth
+                const bandwidthResult = await networkTester.testBandwidth();
+                addTestResult(bandwidthResult);
+                
+                console.log('Network tests completed.');
+            } catch (error) {
+                console.error('Error in network tests:', error);
+                addTestResult({
+                    test: 'Network Tests Error',
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+        
+        function generateReport() {
+            if (testState.results.length === 0) {
+                console.warn('No test results to generate report from');
+                return;
+            }
+            
+            try {
+                const htmlReport = advancedTester.testReporter.generateHtmlReport(testState.results);
+                advancedTester.testReporter.saveReportToFile(htmlReport, 'cipherwave-advanced-test-report.html');
+                console.log('Report generated and saved as cipherwave-advanced-test-report.html');
+            } catch (error) {
+                console.error('Error generating report:', error);
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTestState();
+            
+            // Event listeners
+            document.getElementById('run-all-tests-btn').addEventListener('click', runAllTests);
+            document.getElementById('generate-report-btn').addEventListener('click', generateReport);
+            document.getElementById('clear-results-btn').addEventListener('click', clearResults);
+            
+            document.getElementById('run-performance-tests').addEventListener('click', runPerformanceTests);
+            document.getElementById('run-stress-tests').addEventListener('click', runStressTests);
+            document.getElementById('run-security-tests').addEventListener('click', runSecurityTests);
+            document.getElementById('run-network-tests').addEventListener('click', runNetworkTests);
+            
+            console.log('CipherWave Advanced Testing Interface Ready');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Manager Test - CipherWave</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .test-section {
+            margin-bottom: 32px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #5682a3;
+        }
+        
+        .mock-chat {
+            background: #e3f2fd;
+            padding: 16px;
+            border-radius: 12px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .mock-input-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 24px;
+            margin-top: 16px;
+        }
+        
+        .mock-message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            outline: none;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #5682a3;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-line;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🎤 CipherWave Voice Manager Test</h1>
+            <p>Test the comprehensive voice message recording system</p>
+        </div>
+
+        <div class="info-box">
+            <h3>📋 Features to Test:</h3>
+            <ul>
+                <li>✅ Voice recording with microphone permissions</li>
+                <li>✅ Real-time waveform visualization</li>
+                <li>✅ Voice message preview with playback controls</li>
+                <li>✅ Audio quality settings (High/Medium/Low)</li>
+                <li>✅ Noise suppression toggle</li>
+                <li>✅ Mobile-optimized touch interface</li>
+                <li>✅ Accessibility compliance</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Voice Recording Controls</h3>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="testVoiceManager()">Initialize Voice Manager</button>
+                <button class="btn btn-secondary" onclick="toggleQuality()">Toggle Quality</button>
+                <button class="btn btn-secondary" onclick="toggleNoiseSuppression()">Toggle Noise Suppression</button>
+                <button class="btn btn-secondary" onclick="showStats()">Show Stats</button>
+            </div>
+            <div id="status" class="status">Ready to test voice functionality...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>💬 Mock Chat Interface</h3>
+            <div class="mock-chat" id="messages-container">
+                <div class="message received">
+                    <div class="message-content">Welcome! Try recording a voice message using the microphone button below.</div>
+                    <div class="message-time">12:00 PM</div>
+                </div>
+            </div>
+            <div class="mock-input-area input-area">
+                <button class="attachment-btn">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <input type="text" class="mock-message-input message-input" placeholder="Type a message...">
+                <!-- Voice button will be inserted here by VoiceManager -->
+                <button class="send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="voice-manager.js"></script>
+    <script>
+        let voiceManagerInstance = null;
+        let currentQuality = 'medium';
+        let noiseSuppressionEnabled = true;
+
+        function updateStatus(message) {
+            const status = document.getElementById('status');
+            const timestamp = new Date().toLocaleTimeString();
+            status.textContent = `[${timestamp}] ${message}\n` + status.textContent;
+        }
+
+        async function testVoiceManager() {
+            try {
+                updateStatus('Initializing Voice Manager...');
+                
+                if (voiceManagerInstance) {
+                    voiceManagerInstance.destroy();
+                }
+                
+                voiceManagerInstance = new VoiceManager();
+                await voiceManagerInstance.setup();
+                
+                updateStatus('✅ Voice Manager initialized successfully!');
+                updateStatus('🎤 Voice button should appear in the input area below');
+                updateStatus('📱 Try clicking or long-pressing the microphone button');
+                
+            } catch (error) {
+                updateStatus(`❌ Error: ${error.message}`);
+                console.error('Voice Manager Error:', error);
+            }
+        }
+
+        function toggleQuality() {
+            if (!voiceManagerInstance) {
+                updateStatus('❌ Please initialize Voice Manager first');
+                return;
+            }
+            
+            const qualities = ['high', 'medium', 'low'];
+            const currentIndex = qualities.indexOf(currentQuality);
+            currentQuality = qualities[(currentIndex + 1) % qualities.length];
+            
+            voiceManagerInstance.setAudioQuality(currentQuality);
+            updateStatus(`🔊 Audio quality set to: ${currentQuality}`);
+        }
+
+        function toggleNoiseSuppression() {
+            if (!voiceManagerInstance) {
+                updateStatus('❌ Please initialize Voice Manager first');
+                return;
+            }
+            
+            noiseSuppressionEnabled = !noiseSuppressionEnabled;
+            voiceManagerInstance.toggleNoiseSuppression(noiseSuppressionEnabled);
+            updateStatus(`🔇 Noise suppression: ${noiseSuppressionEnabled ? 'enabled' : 'disabled'}`);
+        }
+
+        function showStats() {
+            if (!voiceManagerInstance) {
+                updateStatus('❌ Please initialize Voice Manager first');
+                return;
+            }
+            
+            const stats = voiceManagerInstance.getRecordingStats();
+            updateStatus('📊 Voice Manager Statistics:');
+            updateStatus(`   • Recording: ${stats.isRecording ? 'Yes' : 'No'}`);
+            updateStatus(`   • Duration: ${stats.duration}ms`);
+            updateStatus(`   • Quality: ${stats.quality}`);
+            updateStatus(`   • Format: ${stats.mimeType}`);
+            updateStatus(`   • Noise Suppression: ${stats.noiseSuppressionEnabled ? 'On' : 'Off'}`);
+            updateStatus(`   • Max Recording Time: ${stats.maxRecordingTime / 1000}s`);
+            updateStatus(`   • Voice Messages: ${stats.voiceMessagesCount}`);
+        }
+
+        // Mock message display function for testing
+        window.displayMessage = function(message, type) {
+            const messagesContainer = document.getElementById('messages-container');
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${type}`;
+            messageElement.innerHTML = `
+                <div class="message-content">${message}</div>
+                <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            `;
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            return messageElement;
+        };
+
+        // Auto-initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('🚀 Voice Manager Test Environment Ready');
+            updateStatus('📝 Click "Initialize Voice Manager" to start testing');
+            updateStatus('');
+            updateStatus('🎯 Testing Instructions:');
+            updateStatus('1. Click "Initialize Voice Manager" button');
+            updateStatus('2. Grant microphone permissions when prompted');
+            updateStatus('3. Look for the microphone button in the input area');
+            updateStatus('4. Click or long-press to record voice messages');
+            updateStatus('5. Try different quality settings and noise suppression');
+            updateStatus('6. Test on both desktop and mobile devices');
+        });
+
+        // Add some basic message styles
+        const messageStyles = document.createElement('style');
+        messageStyles.textContent = `
+            .message {
+                margin: 8px 0;
+                padding: 8px 12px;
+                border-radius: 12px;
+                max-width: 70%;
+                animation: slideIn 0.3s ease;
+            }
+            
+            .message.received {
+                background: #f0f4f8;
+                align-self: flex-start;
+            }
+            
+            .message.sent {
+                background: #e3f2fd;
+                align-self: flex-end;
+                margin-left: auto;
+            }
+            
+            .message-content {
+                margin-bottom: 4px;
+            }
+            
+            .message-time {
+                font-size: 0.8rem;
+                color: #666;
+                text-align: right;
+            }
+            
+            @keyframes slideIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            .attachment-btn, .send-btn {
+                background: none;
+                border: none;
+                color: #5682a3;
+                font-size: 1.2rem;
+                cursor: pointer;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            }
+            
+            .attachment-btn:hover, .send-btn:hover {
+                background: rgba(0, 0, 0, 0.05);
+            }
+
+            .send-btn {
+                background: #5682a3;
+                color: white;
+            }
+
+            .send-btn:hover {
+                background: #4a7290;
+            }
+        `;
+        document.head.appendChild(messageStyles);
+    </script>
+</body>
+</html>

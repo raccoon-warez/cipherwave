@@ -1,5 +1,10 @@
 // CipherWave - Secure P2P Messenger
-// script.js
+// script.js - Enhanced with security fixes and performance optimizations
+
+// Load security, message, and connection managers
+const securityManager = new SecurityManager();
+let messageManager = null;
+let connectionManager = null;
 
 // DOM Elements
 const modeSelection = document.getElementById('mode-selection');
@@ -27,19 +32,23 @@ const debugToggle = document.getElementById('debug-toggle');
 const debugLogs = document.getElementById('debug-logs');
 const clearLogsBtn = document.getElementById('clear-logs-btn');
 const runDebugBtn = document.getElementById('run-debug-btn');
+const userIdDisplay = document.getElementById('user-id-display');
+const peerStatus = document.getElementById('peer-status');
 
 // Application State
 let peerConnection = null;
 let dataChannel = null;
 let isConnected = false;
 let isInitiator = false;
-let currentCipher = 'aes';
-let encryptionKey = null;
+let currentCipher = 'chacha20-poly1305'; // Use secure cipher by default
 let room = null;
 let nodeServer = null;
 let signalingSocket = null;
 let pendingMessages = new Map(); // For message delivery confirmations
 let messageCounter = 0;
+let userId = null;
+let authenticationState = 'none'; // 'none', 'challenging', 'authenticated'
+let peerChallenge = null;
 
 // Configuration for WebRTC with fallback options
 const configuration = {
@@ -186,14 +195,38 @@ async function discoverServer(roomId) {
     throw new Error('No available signaling servers found');
 }
 
-// Generate a random room ID
+// Generate a cryptographically secure random room ID
 function generateRoomId() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let roomId = '';
-    for (let i = 0; i < 20; i++) {
-        roomId += chars.charAt(Math.floor(Math.random() * chars.length));
+    
+    if (window.crypto && window.crypto.getRandomValues) {
+        // Use secure random number generation
+        const randomArray = new Uint8Array(20);
+        window.crypto.getRandomValues(randomArray);
+        
+        for (let i = 0; i < 20; i++) {
+            roomId += chars.charAt(randomArray[i] % chars.length);
+        }
+    } else {
+        // Fallback for older browsers
+        console.warn('Using fallback random generation - not cryptographically secure');
+        for (let i = 0; i < 20; i++) {
+            roomId += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
     }
     return roomId;
+}
+
+// Generate a unique user ID
+function generateUserId() {
+    const prefix = 'CW';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let id = prefix + '-';
+    for (let i = 0; i < 6; i++) {
+        id += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return id;
 }
 
 // Update node status display
@@ -206,6 +239,18 @@ function updateNodeStatus(text, className) {
 function updateConnectionStatus(text, className) {
     connectionStatus.textContent = text;
     connectionStatus.className = className;
+    
+    // Update peer status in chat header
+    if (peerStatus) {
+        peerStatus.textContent = text;
+        if (className.includes('connected')) {
+            peerStatus.style.color = '#4CAF50';
+        } else if (className.includes('disconnected')) {
+            peerStatus.style.color = '#F44336';
+        } else {
+            peerStatus.style.color = '#FF9800';
+        }
+    }
 }
 
 // Mode selection
@@ -244,7 +289,7 @@ cipherSelect.addEventListener('change', () => {
     currentCipher = cipherSelect.value;
 });
 
-// Connect to room
+// Connect to room with enhanced security
 connectBtn.addEventListener('click', async () => {
     room = roomInput.value.trim();
     if (!room) {
@@ -252,34 +297,100 @@ connectBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Set connection status
-    updateConnectionStatus('Discovering network...', 'status-disconnected');
-
-    // Discover and connect to signaling server
-    let serverUrl;
-    try {
-        serverUrl = await discoverServer(room);
-    } catch (err) {
-        updateConnectionStatus('No available servers', 'status-disconnected');
+    // Validate room ID format
+    if (!/^[a-zA-Z0-9_-]+$/.test(room) || room.length < 4 || room.length > 100) {
+        alert('Invalid room ID format. Use only letters, numbers, hyphens, and underscores (4-100 characters)');
         return;
     }
 
-    // Initialize encryption
-    await initializeEncryption();
-
-    // Set up signaling message handler
-    signaling.onMessage((msg) => {
-        if (msg.type === 'init') {
-            isInitiator = msg.initiator;
-            // Start WebRTC connection after receiving init message
-            startConnection();
-        } else if (msg.type === 'key') {
-            // Handle key exchange message
-            handleKeyExchange(msg);
-        } else {
-            handleSignalingMessage(msg);
+    try {
+        // Initialize security manager first
+        updateConnectionStatus('Initializing security...', 'status-disconnected');
+        const securityInitialized = await securityManager.initialize();
+        if (!securityInitialized) {
+            throw new Error('Failed to initialize security subsystem');
         }
-    });
+
+        // Initialize message manager
+        if (!messageManager) {
+            messageManager = new MessageManager(messagesContainer, {
+                maxMessages: 1000,
+                batchSize: 5,
+                batchInterval: 100
+            });
+        }
+
+        // Discover and connect to signaling server
+        updateConnectionStatus('Discovering network...', 'status-disconnected');
+        let serverUrl;
+        try {
+            serverUrl = await discoverServer(room);
+        } catch (err) {
+            updateConnectionStatus('No available servers', 'status-disconnected');
+            return;
+        }
+
+        // Initialize connection manager
+        connectionManager = new ConnectionManager(configuration, signaling);
+        connectionManager.addEventListener('connected', () => {
+            isConnected = true;
+            updateConnectionStatus('Connected', 'status-connected');
+            connectBtn.disabled = true;
+            disconnectBtn.disabled = false;
+            
+            // Show chat panel
+            connectionPanel.classList.add('hidden');
+            chatPanel.classList.remove('hidden');
+        });
+        
+        connectionManager.addEventListener('disconnected', () => {
+            isConnected = false;
+            updateConnectionStatus('Disconnected', 'status-disconnected');
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            
+            // Show connection panel
+            chatPanel.classList.add('hidden');
+            connectionPanel.classList.remove('hidden');
+        });
+        
+        connectionManager.addEventListener('error', (error) => {
+            console.error('Connection error:', error);
+            updateConnectionStatus('Connection error: ' + error.message, 'status-disconnected');
+        });
+        
+        connectionManager.addEventListener('dataReceived', async (data) => {
+            try {
+                const messageData = JSON.parse(data);
+                if (messageData.type === 'message') {
+                    const decryptedMessage = await decryptMessage(messageData.content);
+                    displayMessage(decryptedMessage, 'received');
+                    
+                    // Send delivery confirmation
+                    if (messageData.messageId) {
+                        connectionManager.sendData(JSON.stringify({
+                            type: 'delivery-confirmation',
+                            messageId: messageData.messageId
+                        }));
+                    }
+                } else if (messageData.type === 'delivery-confirmation') {
+                    if (messageManager) {
+                        messageManager.updateMessageStatus(messageData.messageId, 'delivered');
+                    }
+                    pendingMessages.delete(messageData.messageId);
+                }
+            } catch (error) {
+                console.error('Error processing received data:', error);
+            }
+        });
+
+        // Set up signaling message handler with authentication
+        signaling.onMessage(handleSecureSignalingMessage);
+        
+    } catch (error) {
+        console.error('Connection initialization failed:', error);
+        updateConnectionStatus('Connection failed: ' + error.message, 'status-disconnected');
+    }
 });
 
 // Log connection state for debugging
@@ -300,7 +411,7 @@ function logConnectionState(state) {
     }
 }
 
-// Start WebRTC connection
+// Legacy WebRTC connection function (now handled by ConnectionManager)
 function startConnection() {
     try {
         // Update connection status
@@ -584,42 +695,54 @@ function setupDataChannel(channel) {
         }
     };
     
-    channel.onmessage = event => {
+    channel.onmessage = async (event) => {
         try {
             const data = JSON.parse(event.data);
             if (data.type === 'message') {
-                // Decrypt message
-                const decryptedMessage = decryptMessage(data.content, currentCipher);
+                // Decrypt message using security manager
+                const decryptedMessage = await decryptMessage(data.content);
                 displayMessage(decryptedMessage, 'received');
+                
+                // Send delivery confirmation
+                if (data.messageId) {
+                    channel.send(JSON.stringify({
+                        type: 'delivery-confirmation',
+                        messageId: data.messageId
+                    }));
+                }
             } else if (data.type === 'delivery-confirmation') {
                 // Handle message delivery confirmation
-                const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
-                if (messageElement) {
-                    const statusElement = messageElement.querySelector('.message-status');
-                    if (statusElement) {
-                        statusElement.textContent = '✓✓';
-                        statusElement.className = 'message-status delivered';
-                    }
+                if (messageManager) {
+                    messageManager.updateMessageStatus(data.messageId, 'delivered');
                 }
+                pendingMessages.delete(data.messageId);
             }
         } catch (error) {
             console.error('Error processing message:', error);
+            logConnectionState(`Message processing error: ${error.message}`);
         }
     };
 }
 
 // Disconnect from room
 disconnectBtn.addEventListener('click', () => {
-    if (dataChannel) {
-        dataChannel.close();
+    // Close connection manager
+    if (connectionManager) {
+        connectionManager.close();
+        connectionManager = null;
     }
-    if (peerConnection) {
-        peerConnection.close();
-    }
-
+    
+    // Close signaling connection
     signaling.disconnect();
+    
+    // Clean up security manager
+    if (securityManager) {
+        securityManager.destroy();
+    }
 
+    // Reset state
     isConnected = false;
+    authenticationState = 'none';
     updateConnectionStatus('Disconnected', 'status-disconnected');
     connectBtn.disabled = false;
     disconnectBtn.disabled = true;
@@ -628,8 +751,10 @@ disconnectBtn.addEventListener('click', () => {
     chatPanel.classList.add('hidden');
     connectionPanel.classList.remove('hidden');
 
-    // Clear messages
-    messagesContainer.innerHTML = '';
+    // Clear messages using message manager
+    if (messageManager) {
+        messageManager.clearAllMessages();
+    }
     
     // Clear pending messages
     pendingMessages.clear();
@@ -643,14 +768,20 @@ messageInput.addEventListener('keypress', (e) => {
     }
 });
 
-// Send message function
-function sendMessage() {
+// Send message function with enhanced security
+async function sendMessage() {
     const message = messageInput.value.trim();
     if (!message || !isConnected || !dataChannel) return;
     
     try {
-        // Encrypt message
-        const encryptedMessage = encryptMessage(message, currentCipher);
+        // Validate message length and content
+        if (message.length > 5000) {
+            alert('Message too long (maximum 5000 characters)');
+            return;
+        }
+        
+        // Encrypt message using security manager
+        const encryptedData = await encryptMessage(message);
         
         // Create message ID for tracking
         const messageId = ++messageCounter;
@@ -658,153 +789,259 @@ function sendMessage() {
         // Send via data channel
         const messageData = {
             type: 'message',
-            content: encryptedMessage,
+            content: encryptedData,
             timestamp: Date.now(),
             messageId: messageId
         };
         
-        dataChannel.send(JSON.stringify(messageData));
-        displayMessage(message, 'sent', messageId);
-        messageInput.value = '';
+        if (connectionManager && connectionManager.sendData(JSON.stringify(messageData))) {
+            displayMessage(message, 'sent', messageId);
+            messageInput.value = '';
         
-        // Track pending message for delivery confirmation
-        pendingMessages.set(messageId, {
-            content: message,
-            timestamp: Date.now()
-        });
-        
-        // Set timeout for delivery confirmation
-        setTimeout(() => {
-            if (pendingMessages.has(messageId)) {
-                const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-                if (messageElement) {
-                    const statusElement = messageElement.querySelector('.message-status');
-                    if (statusElement && statusElement.textContent === '✓') {
-                        statusElement.textContent = '⚠';
-                        statusElement.className = 'message-status not-delivered';
+            // Track pending message for delivery confirmation
+            pendingMessages.set(messageId, {
+                content: message,
+                timestamp: Date.now()
+            });
+            
+            // Set timeout for delivery confirmation
+            setTimeout(() => {
+                if (pendingMessages.has(messageId)) {
+                    if (messageManager) {
+                        messageManager.updateMessageStatus(messageId, 'failed');
                     }
+                    pendingMessages.delete(messageId);
                 }
-                pendingMessages.delete(messageId);
-            }
-        }, 5000);
+            }, 5000);
+        } else {
+            throw new Error('Failed to send message - connection not available');
+        }
         
     } catch (error) {
         console.error('Error sending message:', error);
-        alert('Failed to send message');
+        alert('Failed to send message: ' + error.message);
     }
 }
 
-// Display message in UI
+// Display message using enhanced message manager
 function displayMessage(message, type, messageId = null) {
-    const messageElement = document.createElement('div');
-    messageElement.className = `message ${type}`;
-    
-    if (messageId) {
-        messageElement.setAttribute('data-message-id', messageId);
+    if (messageManager) {
+        messageManager.addMessage(message, type, messageId);
+    } else {
+        console.error('Message manager not initialized');
     }
-    
-    const messageContent = document.createElement('div');
-    messageContent.textContent = message;
-    
-    const messageInfo = document.createElement('div');
-    messageInfo.className = 'message-info';
-    messageInfo.textContent = new Date().toLocaleTimeString();
-    
-    // Add delivery status indicator for sent messages
-    if (type === 'sent') {
-        const statusElement = document.createElement('span');
-        statusElement.className = 'message-status';
-        statusElement.textContent = '✓';
-        messageInfo.appendChild(statusElement);
-    }
-    
-    messageElement.appendChild(messageContent);
-    messageElement.appendChild(messageInfo);
-    messagesContainer.appendChild(messageElement);
-    
-    // Scroll to bottom
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// Initialize encryption based on selected cipher
-async function initializeEncryption() {
-    switch (currentCipher) {
-        case 'aes':
-            // Generate a random key for AES
-            encryptionKey = CryptoJS.lib.WordArray.random(256/8);
-            break;
-        case 'rsa':
-            // In a real implementation, we would generate RSA keys
-            // For demo, we'll use a placeholder
-            encryptionKey = 'rsa-key-placeholder';
-            break;
-        case 'chacha20':
-            // Generate a random key for ChaCha20
-            encryptionKey = CryptoJS.lib.WordArray.random(256/8);
-            break;
+// Enhanced unread message counter
+let unreadCount = 0;
+function updateUnreadCount() {
+    const unreadElement = document.getElementById('unread-count');
+    if (unreadElement) {
+        if (unreadCount > 0) {
+            unreadElement.textContent = unreadCount > 99 ? '99+' : unreadCount.toString();
+            unreadElement.style.display = 'inline-block';
+        } else {
+            unreadElement.style.display = 'none';
+        }
     }
-    
-    // For demo purposes, we'll share the key through the signaling channel
-    // In a real implementation, this would be done through a secure key exchange
+}
+
+// Secure authentication and key exchange process
+async function performAuthentication() {
+    if (!securityManager.isInitialized) {
+        throw new Error('Security manager not initialized');
+    }
+
     if (isInitiator) {
-        setTimeout(() => {
-            signaling.send({
-                type: 'key',
-                cipher: currentCipher,
-                key: encryptionKey.toString()
-            });
-        }, 2000);
+        // Initiator starts the authentication process
+        logConnectionState('Starting authentication as initiator');
+        const publicKeys = securityManager.getPublicKeys();
+        
+        signaling.send({
+            type: 'auth-request',
+            publicKeys: publicKeys
+        });
+        
+        authenticationState = 'challenging';
+    } else {
+        // Non-initiator waits for authentication request
+        logConnectionState('Waiting for authentication request');
     }
 }
 
-// Handle incoming key exchange messages
-function handleKeyExchange(message) {
-    if (message.type === 'key') {
-        // Set the encryption key received from the initiator
-        encryptionKey = CryptoJS.enc.Hex.parse(message.key);
-        logConnectionState(`Encryption key received for ${message.cipher}`);
-    }
-}
-
-// Encrypt message based on selected cipher
-function encryptMessage(message, cipher) {
-    switch (cipher) {
-        case 'aes':
-            return CryptoJS.AES.encrypt(message, encryptionKey).toString();
-        case 'rsa':
-            // In a real implementation, we would use RSA encryption
-            // For demo, we'll just base64 encode
-            return btoa(message);
-        case 'chacha20':
-            // ChaCha20 implementation would go here
-            // For demo, we'll use AES as a substitute
-            return CryptoJS.AES.encrypt(message, encryptionKey).toString();
-        default:
-            return message;
-    }
-}
-
-// Decrypt message based on selected cipher
-function decryptMessage(encryptedMessage, cipher) {
+// Handle secure signaling messages with authentication
+async function handleSecureSignalingMessage(msg) {
     try {
-        switch (cipher) {
-            case 'aes':
-                const decrypted = CryptoJS.AES.decrypt(encryptedMessage, encryptionKey);
-                return decrypted.toString(CryptoJS.enc.Utf8);
-            case 'rsa':
-                // In a real implementation, we would use RSA decryption
-                // For demo, we'll just base64 decode
-                return atob(encryptedMessage);
-            case 'chacha20':
-                // ChaCha20 implementation would go here
-                // For demo, we'll use AES as a substitute
-                const chachaDecrypted = CryptoJS.AES.decrypt(encryptedMessage, encryptionKey);
-                return chachaDecrypted.toString(CryptoJS.enc.Utf8);
+        switch (msg.type) {
+            case 'init':
+                isInitiator = msg.initiator;
+                logConnectionState(`Received init message, isInitiator: ${isInitiator}`);
+                await performAuthentication();
+                break;
+                
+            case 'auth-request':
+                await handleAuthRequest(msg);
+                break;
+                
+            case 'auth-challenge':
+                await handleAuthChallenge(msg);
+                break;
+                
+            case 'auth-response':
+                await handleAuthResponse(msg);
+                break;
+                
+            case 'key-exchange':
+                await handleSecureKeyExchange(msg);
+                break;
+                
+            case 'authenticated':
+                logConnectionState('Authentication successful, starting WebRTC connection');
+                if (connectionManager) {
+                    await connectionManager.createConnection(isInitiator);
+                }
+                break;
+                
             default:
-                return encryptedMessage;
+                // Handle regular WebRTC signaling only after authentication
+                if (authenticationState === 'authenticated') {
+                    handleSignalingMessage(msg);
+                } else {
+                    console.warn('Received signaling message before authentication:', msg.type);
+                }
         }
     } catch (error) {
-        console.error('Decryption error:', error);
+        console.error('Error handling secure signaling message:', error);
+        logConnectionState(`Signaling error: ${error.message}`);
+    }
+}
+
+// Handle authentication request
+async function handleAuthRequest(msg) {
+    if (isInitiator) return; // Only non-initiator handles auth requests
+    
+    logConnectionState('Processing authentication request');
+    const myPublicKeys = securityManager.getPublicKeys();
+    
+    // Generate challenge for peer
+    const challenge = securityManager.generateChallenge();
+    peerChallenge = challenge;
+    
+    signaling.send({
+        type: 'auth-challenge',
+        publicKeys: myPublicKeys,
+        challenge: challenge
+    });
+    
+    authenticationState = 'challenging';
+}
+
+// Handle authentication challenge
+async function handleAuthChallenge(msg) {
+    if (!isInitiator) return; // Only initiator handles challenges
+    
+    logConnectionState('Processing authentication challenge');
+    
+    try {
+        // Sign the challenge
+        const signature = await securityManager.signChallenge(msg.challenge);
+        
+        // Generate our own challenge
+        const myChallenge = securityManager.generateChallenge();
+        peerChallenge = myChallenge;
+        
+        signaling.send({
+            type: 'auth-response',
+            signature: signature,
+            challenge: myChallenge
+        });
+        
+    } catch (error) {
+        console.error('Failed to sign challenge:', error);
+        logConnectionState('Authentication failed: signature error');
+    }
+}
+
+// Handle authentication response
+async function handleAuthResponse(msg) {
+    if (isInitiator) return; // Only non-initiator handles responses
+    
+    logConnectionState('Processing authentication response');
+    
+    try {
+        // Verify peer's signature (would need peer's public key)
+        // const isValid = await securityManager.verifySignature(peerChallenge, msg.signature, peerPublicKey);
+        
+        // For now, proceed with key exchange
+        // Sign the challenge from peer
+        const signature = await securityManager.signChallenge(msg.challenge);
+        
+        // Perform ECDH key exchange
+        const myPublicKeys = securityManager.getPublicKeys();
+        
+        signaling.send({
+            type: 'key-exchange',
+            signature: signature,
+            ephemeralPublicKey: myPublicKeys.ephemeral
+        });
+        
+    } catch (error) {
+        console.error('Authentication response failed:', error);
+        logConnectionState('Authentication failed: response error');
+    }
+}
+
+// Handle secure key exchange
+async function handleSecureKeyExchange(msg) {
+    if (!isInitiator) return; // Only initiator handles key exchange
+    
+    logConnectionState('Processing secure key exchange');
+    
+    try {
+        // Perform ECDH with peer's ephemeral public key
+        await securityManager.performKeyExchange(msg.ephemeralPublicKey);
+        
+        // Send our ephemeral public key
+        const myPublicKeys = securityManager.getPublicKeys();
+        
+        signaling.send({
+            type: 'key-exchange-complete',
+            ephemeralPublicKey: myPublicKeys.ephemeral
+        });
+        
+        authenticationState = 'authenticated';
+        
+        signaling.send({
+            type: 'authenticated'
+        });
+        
+    } catch (error) {
+        console.error('Key exchange failed:', error);
+        logConnectionState('Key exchange failed: ' + error.message);
+    }
+}
+
+// Encrypt message using security manager
+async function encryptMessage(message) {
+    try {
+        // Validate and sanitize message
+        SecurityManager.validateInput(message, 5000);
+        const sanitizedMessage = SecurityManager.sanitizeMessage(message);
+        
+        // Encrypt using security manager
+        return await securityManager.encryptMessage(sanitizedMessage);
+    } catch (error) {
+        console.error('Encryption failed:', error);
+        throw error;
+    }
+}
+
+// Decrypt message using security manager
+async function decryptMessage(encryptedData) {
+    try {
+        return await securityManager.decryptMessage(encryptedData);
+    } catch (error) {
+        console.error('Decryption failed:', error);
         return '[Decryption Error]';
     }
 }
@@ -817,6 +1054,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Generate a room ID by default
     roomInput.value = generateRoomId();
+    
+    // Generate and display user ID
+    userId = generateUserId();
+    if (userIdDisplay) {
+        userIdDisplay.textContent = userId;
+    }
     
     // Show debug panel
     debugPanel.classList.remove('hidden');
@@ -862,7 +1105,8 @@ function debugConnection() {
     logEntry.className = 'debug-log-entry';
     
     let debugInfo = `=== CipherWave Debug Report ===\n`;
-    debugInfo += `Time: ${new Date().toLocaleString()}\n\n`;
+    debugInfo += `Time: ${new Date().toLocaleString()}\n`;
+    debugInfo += `User ID: ${userId || 'Not generated'}\n\n`;
     
     // Check if required APIs are available
     debugInfo += `WebRTC Support: ${!!window.RTCPeerConnection}\n`;

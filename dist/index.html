@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>CipherWave - Secure P2P Messenger</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <meta name="theme-color" content="#0088cc" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="CipherWave" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- Better touch handling for mobile -->
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <script type="module" crossorigin src="/assets/index-DQ2Q4l-j.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CI5uzP3v.css">
+    <script type="module">import.meta.url;import("_").catch(()=>1);(async function*(){})().next();if(location.protocol!="file:"){window.__vite_is_modern_browser=true}</script>
+    <script type="module">!function(){if(window.__vite_is_modern_browser)return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("vite-legacy-polyfill"),n=document.createElement("script");n.src=e.src,n.onload=function(){System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))},document.body.appendChild(n)}();</script>
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+  <body>
+    <div id="app" class="telegram-app">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="app-logo">
+            <img src="/assets/cipherwave-DHg6SRQs.png" alt="CipherWave" class="logo-icon" />
+            <span class="logo-text">CipherWave</span>
+          </div>
+          <button class="sidebar-toggle" id="sidebar-toggle">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+
+        <div class="user-profile-sidebar">
+          <div class="user-avatar-container">
+            <img src="/assets/cipherwave-DHg6SRQs.png" alt="User Avatar" class="user-avatar" />
+            <div class="status-indicator online"></div>
+          </div>
+          <div class="user-details">
+            <h3 class="user-name">Anonymous User</h3>
+            <p class="user-status">Online</p>
+            <div class="user-id">
+              ID: <span id="user-id-display">CW-XXXXXX</span>
+            </div>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-view="chats">
+            <i class="fas fa-comments"></i>
+            <span>Chats</span>
+            <span class="badge" id="unread-count">0</span>
+          </button>
+          <button class="nav-item" data-view="contacts">
+            <i class="fas fa-users"></i>
+            <span>Contacts</span>
+          </button>
+          <button class="nav-item" data-view="settings">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </button>
+          <button class="nav-item" data-view="security">
+            <i class="fas fa-shield-alt"></i>
+            <span>Security</span>
+          </button>
+        </nav>
+
+        <div class="connection-status-sidebar">
+          <div class="status-indicator-container">
+            <div class="status-dot" id="connection-dot"></div>
+            <span id="connection-text">Disconnected</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Chat List View -->
+        <div class="view active" id="chats-view">
+          <div class="view-header">
+            <h2>Chats</h2>
+            <div class="header-actions">
+              <button class="action-btn" id="new-chat-btn" title="New Chat">
+                <i class="fas fa-plus"></i>
+              </button>
+              <button class="action-btn" id="search-btn" title="Search">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="search-bar hidden" id="search-bar">
+            <input
+              type="text"
+              placeholder="Search chats..."
+              class="search-input"
+            />
+          </div>
+
+          <div class="chat-list" id="chat-list">
+            <div class="empty-state">
+              <i class="fas fa-comments"></i>
+              <h3>No active chats</h3>
+              <p>Start a new conversation to begin messaging</p>
+              <button class="primary-btn" id="start-chat-btn">
+                Start New Chat
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contacts View -->
+        <div class="view" id="contacts-view">
+          <div class="view-header">
+            <h2>Contacts</h2>
+            <div class="header-actions">
+              <button
+                class="action-btn"
+                id="add-contact-btn"
+                title="Add Contact"
+              >
+                <i class="fas fa-user-plus"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="contacts-list" id="contacts-list">
+            <div class="empty-state">
+              <i class="fas fa-users"></i>
+              <h3>No contacts yet</h3>
+              <p>Add contacts to start secure conversations</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings View -->
+        <div class="view" id="settings-view">
+          <div class="view-header">
+            <h2>Settings</h2>
+          </div>
+
+          <div class="settings-content">
+            <div class="settings-section">
+              <h3>Connection</h3>
+              <div class="setting-item">
+                <label for="node-port">Node Port:</label>
+                <input
+                  type="number"
+                  id="node-port"
+                  value="8080"
+                  min="1024"
+                  max="65535"
+                  class="setting-input"
+                />
+              </div>
+              <div class="setting-item">
+                <label for="cipher-select">Default Encryption:</label>
+                <select id="cipher-select" class="setting-input">
+                  <option value="aes">AES-256</option>
+                  <option value="chacha20">ChaCha20</option>
+                  <option value="rsa">RSA</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <h3>Network Mode</h3>
+              <div class="mode-buttons">
+                <button id="host-node-btn" class="mode-btn">
+                  <i class="fas fa-server"></i>
+                  <span>Host Network Node</span>
+                </button>
+                <button id="join-network-btn" class="mode-btn">
+                  <i class="fas fa-plug"></i>
+                  <span>Join Network</span>
+                </button>
+              </div>
+              <div id="node-status" class="status-message">Node Stopped</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security View -->
+        <div class="view" id="security-view">
+          <div class="view-header">
+            <h2>Security</h2>
+          </div>
+
+          <div class="security-content">
+            <div class="security-section">
+              <h3>Encryption Status</h3>
+              <div class="encryption-info">
+                <div class="encryption-item">
+                  <i class="fas fa-lock"></i>
+                  <span>End-to-End Encryption: <strong>Active</strong></span>
+                </div>
+                <div class="encryption-item">
+                  <i class="fas fa-shield-alt"></i>
+                  <span
+                    >Current Cipher:
+                    <strong id="current-cipher">AES-256</strong></span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="security-section">
+              <h3>Debug Information</h3>
+              <div class="debug-panel">
+                <div id="debug-logs" class="debug-logs"></div>
+                <div class="debug-actions">
+                  <button id="clear-logs-btn" class="secondary-btn">
+                    Clear Logs
+                  </button>
+                  <button id="run-debug-btn" class="secondary-btn">
+                    Run Debug
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Chat Window (Overlay) -->
+      <div class="chat-overlay hidden" id="chat-overlay">
+        <div class="chat-window">
+          <div class="chat-header">
+            <button class="back-btn" id="close-chat">
+              <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="chat-info">
+              <img src="/assets/cipherwave-DHg6SRQs.png" alt="Peer Avatar" class="peer-avatar" />
+              <div class="peer-details">
+                <h3 id="peer-name">Peer Connection</h3>
+                <p id="peer-status">Connecting...</p>
+              </div>
+            </div>
+            <div class="chat-actions">
+              <button class="action-btn" id="call-btn" title="Voice Call">
+                <i class="fas fa-phone"></i>
+              </button>
+              <button class="action-btn" id="video-btn" title="Video Call">
+                <i class="fas fa-video"></i>
+              </button>
+              <button class="action-btn" id="more-btn" title="More">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="messages-container" id="messages">
+            <div class="welcome-message">
+              <i class="fas fa-lock"></i>
+              <p>
+                Messages are end-to-end encrypted. Only you and the recipient
+                can read them.
+              </p>
+            </div>
+          </div>
+
+          <div class="message-input-container">
+            <div class="input-wrapper">
+              <button class="attachment-btn" title="Attach File">
+                <i class="fas fa-paperclip"></i>
+              </button>
+              <input
+                type="text"
+                id="message-input"
+                placeholder="Type a message..."
+                class="message-input"
+              />
+              <button class="emoji-btn" title="Emoji">
+                <i class="fas fa-smile"></i>
+              </button>
+              <button id="send-btn" class="send-btn" title="Send">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connection Modal -->
+      <div class="modal hidden" id="connection-modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Join Network</h3>
+            <button class="close-btn" id="close-modal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="room-id">Room ID:</label>
+              <div class="input-group">
+                <input
+                  type="text"
+                  id="room-id"
+                  placeholder="Enter or generate room ID"
+                  class="modal-input"
+                />
+                <button id="generate-room" class="secondary-btn">
+                  Generate
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Connection Status:</label>
+              <div id="connection-status" class="status-display">
+                Disconnected
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="disconnect-btn" class="secondary-btn" disabled>
+              Disconnect
+            </button>
+            <button id="connect-btn" class="primary-btn">Connect</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading Overlay -->
+      <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <p>Connecting...</p>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    
+    <!-- Enhanced Mobile JavaScript -->
+    <script>
+      // Mobile responsiveness enhancements
+      document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const chatOverlay = document.getElementById('chat-overlay');
+        const closeChatBtn = document.getElementById('close-chat');
+        const connectionModal = document.getElementById('connection-modal');
+        const newChatBtn = document.getElementById('new-chat-btn');
+        const startChatBtn = document.getElementById('start-chat-btn');
+        const closeModalBtn = document.getElementById('close-modal');
+        const navItems = document.querySelectorAll('.nav-item');
+        const views = document.querySelectorAll('.view');
+        const messageInput = document.getElementById('message-input');
+        const chatWindow = document.querySelector('.chat-window');
+        
+        let isMobile = window.innerWidth <= 768;
+        let sidebarExpanded = false;
+
+        // Mobile detection and viewport handling
+        function updateMobileState() {
+          isMobile = window.innerWidth <= 768;
+          if (!isMobile) {
+            sidebar.classList.remove('mobile-expanded');
+            sidebarExpanded = false;
+          }
+        }
+
+        // Enhanced sidebar toggle for mobile
+        function toggleSidebar() {
+          if (isMobile) {
+            sidebarExpanded = !sidebarExpanded;
+            if (sidebarExpanded) {
+              sidebar.classList.add('mobile-expanded');
+            } else {
+              sidebar.classList.remove('mobile-expanded');
+            }
+          } else {
+            sidebar.classList.toggle('collapsed');
+          }
+        }
+
+        sidebarToggle.addEventListener('click', toggleSidebar);
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+          if (isMobile && sidebarExpanded && sidebar && !sidebar.contains(e.target)) {
+            sidebar.classList.remove('mobile-expanded');
+            sidebarExpanded = false;
+          }
+        });
+
+        // Navigation handling
+        navItems.forEach((item, index) => {
+          item.addEventListener('click', function() {
+            // Update active state
+            navItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+            
+            // Switch views
+            views.forEach(view => view.classList.remove('active'));
+            if (views[index]) {
+              views[index].classList.add('active');
+            }
+            
+            // Close sidebar on mobile after navigation
+            if (isMobile) {
+              sidebar.classList.remove('mobile-expanded');
+              sidebarExpanded = false;
+            }
+          });
+        });
+
+        // Chat overlay handling
+        function openChat() {
+          chatOverlay.classList.remove('hidden');
+          document.body.style.overflow = 'hidden'; // Prevent background scroll
+          
+          // Focus message input after a short delay
+          setTimeout(() => {
+            if (messageInput) {
+              messageInput.focus();
+            }
+          }, 300);
+        }
+
+        function closeChat() {
+          chatOverlay.classList.add('hidden');
+          document.body.style.overflow = ''; // Restore scroll
+        }
+
+        if (newChatBtn) newChatBtn.addEventListener('click', openChat);
+        if (startChatBtn) startChatBtn.addEventListener('click', openChat);
+        if (closeChatBtn) closeChatBtn.addEventListener('click', closeChat);
+
+        // Modal handling
+        function openModal() {
+          connectionModal.classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+          connectionModal.classList.add('hidden');
+          document.body.style.overflow = '';
+        }
+
+        if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+
+        // Close modal/overlay on background click
+        if (connectionModal) {
+          connectionModal.addEventListener('click', function(e) {
+            if (e.target === connectionModal) {
+              closeModal();
+            }
+          });
+        }
+
+        if (chatOverlay) {
+          chatOverlay.addEventListener('click', function(e) {
+            if (e.target === chatOverlay) {
+              closeChat();
+            }
+          });
+        }
+
+        // Mobile keyboard handling
+        function handleKeyboardShow() {
+          if (chatWindow && isMobile) {
+            chatWindow.classList.add('keyboard-open');
+          }
+        }
+
+        function handleKeyboardHide() {
+          if (chatWindow) {
+            chatWindow.classList.remove('keyboard-open');
+          }
+        }
+
+        // Virtual keyboard detection for mobile
+        if (messageInput) {
+          messageInput.addEventListener('focus', handleKeyboardShow);
+          messageInput.addEventListener('blur', handleKeyboardHide);
+          
+          // iOS specific handling
+          if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+            messageInput.addEventListener('focusin', handleKeyboardShow);
+            messageInput.addEventListener('focusout', handleKeyboardHide);
+          }
+        }
+
+        // Enhanced touch interactions
+        function addTouchFeedback(elements) {
+          elements.forEach(element => {
+            if (element) {
+              element.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.95)';
+                this.style.transition = 'transform 0.1s ease';
+              });
+              
+              element.addEventListener('touchend', function() {
+                this.style.transform = '';
+                this.style.transition = 'transform 0.2s ease';
+              });
+              
+              element.addEventListener('touchcancel', function() {
+                this.style.transform = '';
+                this.style.transition = 'transform 0.2s ease';
+              });
+            }
+          });
+        }
+
+        // Apply touch feedback to interactive elements
+        const touchElements = [
+          ...document.querySelectorAll('.primary-btn'),
+          ...document.querySelectorAll('.secondary-btn'),
+          ...document.querySelectorAll('.action-btn'),
+          document.getElementById('send-btn'),
+          ...document.querySelectorAll('.nav-item')
+        ];
+        addTouchFeedback(touchElements);
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+          updateMobileState();
+          
+          // Close sidebar if switching from mobile to desktop
+          if (!isMobile && sidebarExpanded) {
+            sidebar.classList.remove('mobile-expanded');
+            sidebarExpanded = false;
+          }
+        });
+
+        // Prevent pull-to-refresh on mobile
+        document.addEventListener('touchstart', function(e) {
+          if (e.touches.length !== 1) return;
+          const windowY = window.pageYOffset;
+          const touch = e.touches[0];
+          if (windowY === 0 && touch.clientY > 0) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+
+        document.addEventListener('touchmove', function(e) {
+          if (e.touches.length !== 1) return;
+          const windowY = window.pageYOffset;
+          const touch = e.touches[0];
+          if (windowY === 0 && touch.clientY > 0) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+
+        // Enhanced message input for mobile
+        if (messageInput) {
+          // Auto-resize for multiline messages
+          messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+          });
+
+          // Send on Enter (but allow Shift+Enter for new line)
+          messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              const sendBtn = document.getElementById('send-btn');
+              if (sendBtn && this.value.trim()) {
+                sendBtn.click();
+              }
+            }
+          });
+        }
+
+        // Initialize mobile state
+        updateMobileState();
+
+        // Better error handling for mobile
+        window.addEventListener('error', function(e) {
+          console.error('Mobile app error:', e.error);
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+          console.error('Unhandled promise rejection:', e.reason);
+        });
+
+        // Performance optimization for mobile scrolling
+        const messagesContainer = document.getElementById('messages');
+        if (messagesContainer) {
+          let isScrolling = false;
+          messagesContainer.addEventListener('scroll', function() {
+            if (!isScrolling) {
+              window.requestAnimationFrame(function() {
+                // Smooth scrolling optimizations can go here
+                isScrolling = false;
+              });
+              isScrolling = true;
+            }
+          });
+        }
+
+        // Add visual feedback for connection status
+        function updateConnectionIndicator(status) {
+          const statusDot = document.getElementById('connection-dot');
+          const statusText = document.getElementById('connection-text');
+          
+          if (statusDot && statusText) {
+            statusDot.className = 'status-dot';
+            switch(status) {
+              case 'connected':
+                statusDot.classList.add('connected');
+                statusText.textContent = 'Connected';
+                break;
+              case 'connecting':
+                statusDot.classList.add('connecting');
+                statusText.textContent = 'Connecting...';
+                break;
+              default:
+                statusText.textContent = 'Disconnected';
+            }
+          }
+        }
+
+        // Expose functions for use by other scripts
+        window.CipherWaveMobile = {
+          openChat,
+          closeChat,
+          openModal,
+          closeModal,
+          updateConnectionIndicator,
+          isMobile: () => isMobile
+        };
+      });
+
+      // Service Worker registration for PWA functionality
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('SW registered: ', registration);
+            })
+            .catch(function(registrationError) {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+
+      // Add to homescreen prompt for mobile
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show install button or banner
+        console.log('PWA install prompt available');
+      });
+
+      window.addEventListener('appinstalled', (evt) => {
+        console.log('PWA was installed');
+      });
+    </script>
+    <script nomodule>!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();</script>
+    <script nomodule crossorigin id="vite-legacy-polyfill" src="/assets/polyfills-legacy-RoM1PURb.js"></script>
+    <script nomodule crossorigin id="vite-legacy-entry" data-src="/assets/index-legacy-CgY4zHRK.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
+  </body>
+</html>

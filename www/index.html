@@ -2,291 +2,1823 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>CipherWave - Secure P2P Messenger</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Telegram-like UI Styles */
+        :root {
+            --tg-primary: #5682a3;
+            --tg-primary-dark: #4a7290;
+            --tg-background: #ffffff;
+            --tg-sidebar: #f0f4f8;
+            --tg-chat-bg: #e3f2fd;
+            --tg-message-received: #f0f4f8;
+            --tg-message-sent: #e3f2fd;
+            --tg-text-primary: #212121;
+            --tg-text-secondary: #757575;
+            --tg-border: #e0e0e0;
+            --tg-online: #4caf50;
+            --tg-away: #ff9800;
+            --tg-offline: #9e9e9e;
+        }
+
+        body {
+            background: var(--tg-background);
+            color: var(--tg-text-primary);
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .tg-app {
+            display: flex;
+            height: 100vh;
+            max-width: 100%;
+            margin: 0 auto;
+            background: var(--tg-background);
+        }
+
+        /* Splash Screen */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--tg-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .splash-logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 24px;
+            animation: pulse 2s infinite;
+        }
+
+        .splash-title {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .splash-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        /* Sidebar */
+        .tg-sidebar {
+            width: 300px;
+            background: var(--tg-sidebar);
+            border-right: 1px solid var(--tg-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            background: var(--tg-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+            object-fit: cover;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .search-container {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--tg-border);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--tg-border);
+            background: white;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--tg-border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-item.active {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 12px;
+            object-fit: cover;
+        }
+
+        .chat-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .chat-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-preview {
+            font-size: 0.9rem;
+            color: var(--tg-text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .chat-time {
+            font-size: 0.8rem;
+            color: var(--tg-text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .unread-count {
+            background: var(--tg-primary);
+            color: white;
+            font-size: 0.7rem;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .new-chat-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--tg-primary);
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .new-chat-btn:hover {
+            background: var(--tg-primary-dark);
+            transform: scale(1.05);
+        }
+
+        /* Main Chat Area */
+        .tg-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 12px 16px;
+            background: white;
+            border-bottom: 1px solid var(--tg-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .contact-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .contact-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+            object-fit: cover;
+        }
+
+        .contact-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .contact-status {
+            font-size: 0.8rem;
+            color: var(--tg-online);
+            display: flex;
+            align-items: center;
+        }
+
+        .contact-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--tg-online);
+            margin-right: 6px;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .chat-action-btn {
+            background: none;
+            border: none;
+            color: var(--tg-text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .chat-action-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: var(--tg-chat-bg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            border-radius: 18px;
+            position: relative;
+            word-wrap: break-word;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .message.received {
+            background: var(--tg-message-received);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.sent {
+            background: var(--tg-message-sent);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-content {
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: var(--tg-text-secondary);
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        .input-area {
+            padding: 12px 16px;
+            background: white;
+            border-top: 1px solid var(--tg-border);
+            display: flex;
+            align-items: center;
+        }
+
+        .attachment-btn {
+            background: none;
+            border: none;
+            color: var(--tg-text-secondary);
+            font-size: 1.3rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+        }
+
+        .attachment-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 24px;
+            border: 1px solid var(--tg-border);
+            font-size: 1rem;
+            outline: none;
+            resize: none;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .message-input:focus {
+            border-color: var(--tg-primary);
+        }
+
+        .send-btn {
+            background: var(--tg-primary);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-left: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover {
+            background: var(--tg-primary-dark);
+        }
+
+        .send-btn:disabled {
+            background: var(--tg-text-secondary);
+            cursor: not-allowed;
+        }
+
+        /* Connection Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--tg-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .close-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--tg-border);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--tg-primary);
+        }
+
+        .avatar-selection {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .avatar-option {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .avatar-option.selected {
+            border-color: var(--tg-primary);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--tg-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--tg-primary-dark);
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: var(--tg-online);
+        }
+
+        .status-away {
+            background: var(--tg-away);
+        }
+
+        .status-offline {
+            background: var(--tg-offline);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Enhanced Mobile-First Responsive Design */
+        @media (max-width: 1024px) {
+            .tg-sidebar {
+                width: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .tg-app {
+                height: 100vh;
+                height: 100dvh; /* Dynamic viewport height */
+            }
+            
+            .tg-sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 70px;
+                border-right: none;
+                border-bottom: 1px solid var(--tg-border);
+                flex-direction: row;
+                overflow-x: auto;
+                overflow-y: hidden;
+                position: relative;
+                z-index: 100;
+            }
+            
+            .tg-sidebar.mobile-expanded {
+                max-height: 350px;
+                flex-direction: column;
+                overflow-y: auto;
+                overflow-x: hidden;
+                background: var(--tg-sidebar);
+            }
+            
+            .sidebar-header {
+                min-width: 200px;
+                border-bottom: none;
+                border-right: 1px solid var(--tg-border);
+                flex-shrink: 0;
+            }
+            
+            .tg-sidebar.mobile-expanded .sidebar-header {
+                min-width: auto;
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--tg-border);
+            }
+            
+            .user-name {
+                display: block;
+                font-size: 0.9rem;
+            }
+            
+            .sidebar-actions {
+                display: flex;
+                gap: 8px;
+            }
+            
+            .search-container {
+                display: none;
+            }
+            
+            .tg-sidebar.mobile-expanded .search-container {
+                display: block;
+            }
+            
+            .chat-list {
+                display: none;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 8px;
+                gap: 8px;
+            }
+            
+            .tg-sidebar.mobile-expanded .chat-list {
+                display: flex;
+                flex-direction: column;
+                padding: 0;
+                gap: 0;
+            }
+            
+            .chat-item {
+                min-width: 80px;
+                flex-shrink: 0;
+                flex-direction: column;
+                text-align: center;
+                padding: 8px;
+                border-bottom: none;
+                border-radius: 8px;
+                margin: 0 4px;
+            }
+            
+            .tg-sidebar.mobile-expanded .chat-item {
+                flex-direction: row;
+                text-align: left;
+                padding: 12px 16px;
+                border-bottom: 1px solid var(--tg-border);
+                border-radius: 0;
+                margin: 0;
+                min-width: auto;
+            }
+            
+            .chat-avatar {
+                width: 40px;
+                height: 40px;
+                margin-right: 0;
+                margin-bottom: 4px;
+            }
+            
+            .tg-sidebar.mobile-expanded .chat-avatar {
+                width: 50px;
+                height: 50px;
+                margin-right: 12px;
+                margin-bottom: 0;
+            }
+            
+            .chat-info {
+                display: none;
+            }
+            
+            .tg-sidebar.mobile-expanded .chat-info {
+                display: block;
+            }
+            
+            .chat-preview, .chat-time, .unread-count {
+                display: none;
+            }
+            
+            .tg-sidebar.mobile-expanded .chat-preview,
+            .tg-sidebar.mobile-expanded .chat-time,
+            .tg-sidebar.mobile-expanded .unread-count {
+                display: block;
+            }
+            
+            .chat-name {
+                font-size: 0.7rem;
+                margin-bottom: 0;
+            }
+            
+            .tg-sidebar.mobile-expanded .chat-name {
+                font-size: 1rem;
+                margin-bottom: 4px;
+            }
+            
+            .tg-main {
+                flex: 1;
+                min-height: 0;
+            }
+            
+            /* Enhanced message display */
+            .message {
+                max-width: 85%;
+                margin-bottom: 8px;
+                padding: 8px 12px;
+            }
+            
+            .message-content {
+                font-size: 0.9rem;
+            }
+            
+            .message-time {
+                font-size: 0.65rem;
+            }
+            
+            /* Better input area */
+            .input-area {
+                padding: 8px 12px;
+                padding-bottom: calc(8px + env(safe-area-inset-bottom));
+            }
+            
+            .message-input {
+                font-size: 16px; /* Prevents zoom on iOS */
+                padding: 10px 14px;
+                min-height: 40px;
+            }
+            
+            .attachment-btn,
+            .send-btn {
+                min-width: 40px;
+                min-height: 40px;
+            }
+            
+            /* Enhanced touch targets */
+            .action-btn,
+            .chat-action-btn,
+            .close-btn {
+                min-width: 44px;
+                min-height: 44px;
+                font-size: 1.1rem;
+            }
+            
+            /* Modal improvements */
+            .modal-content {
+                width: 95vw;
+                max-height: 90vh;
+                max-height: 90dvh;
+                margin: auto;
+            }
+            
+            .form-control,
+            .modal-input {
+                font-size: 16px; /* Prevents zoom on iOS */
+                min-height: 44px;
+            }
+            
+            .btn {
+                min-height: 48px;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tg-app {
+                flex-direction: column;
+            }
+            
+            .tg-sidebar {
+                height: auto;
+                max-height: 60px;
+            }
+            
+            .tg-sidebar.mobile-expanded {
+                max-height: 300px;
+            }
+            
+            .sidebar-header {
+                padding: 8px 12px;
+                min-width: 160px;
+            }
+            
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .user-name {
+                font-size: 0.8rem;
+            }
+            
+            .logo-title {
+                font-size: 2rem;
+            }
+            
+            .logo-desc {
+                font-size: 1rem;
+            }
+            
+            .chat-header {
+                padding: 8px 12px;
+            }
+            
+            .contact-avatar {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .contact-name {
+                font-size: 1rem;
+            }
+            
+            .contact-status {
+                font-size: 0.7rem;
+            }
+            
+            .messages-container {
+                padding: 8px 12px;
+                padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            }
+            
+            .message {
+                max-width: 90%;
+                padding: 6px 10px;
+            }
+            
+            .message-content {
+                font-size: 0.85rem;
+            }
+            
+            .input-area {
+                padding: 6px 8px;
+                padding-bottom: calc(6px + env(safe-area-inset-bottom));
+            }
+            
+            .new-chat-btn {
+                width: 48px;
+                height: 48px;
+                bottom: 16px;
+                right: 16px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .sidebar-header {
+                min-width: 140px;
+                padding: 6px 8px;
+            }
+            
+            .user-name {
+                display: none;
+            }
+            
+            .sidebar-actions {
+                gap: 4px;
+            }
+            
+            .action-btn {
+                min-width: 36px;
+                min-height: 36px;
+                font-size: 1rem;
+            }
+            
+            .message {
+                max-width: 95%;
+            }
+        }
+
+        /* Enhanced touch interactions */
+        @media (hover: none) and (pointer: coarse) {
+            .action-btn:hover,
+            .chat-action-btn:hover,
+            .chat-item:hover,
+            .btn:hover {
+                background: rgba(0, 0, 0, 0.1);
+                transform: none;
+            }
+            
+            .action-btn:active,
+            .chat-action-btn:active {
+                transform: scale(0.95);
+                background: rgba(0, 0, 0, 0.15);
+            }
+            
+            .btn:active {
+                transform: scale(0.98);
+            }
+            
+            .send-btn:active {
+                transform: scale(0.95);
+            }
+        }
+
+        /* Landscape mobile handling */
+        @media (max-width: 896px) and (orientation: landscape) and (max-height: 500px) {
+            .tg-app {
+                flex-direction: row;
+            }
+            
+            .tg-sidebar {
+                width: 240px;
+                height: 100vh;
+                max-height: none;
+                flex-direction: column;
+                border-right: 1px solid var(--tg-border);
+                border-bottom: none;
+            }
+            
+            .sidebar-header {
+                border-bottom: 1px solid var(--tg-border);
+                border-right: none;
+                min-width: auto;
+            }
+            
+            .search-container,
+            .chat-list {
+                display: block;
+            }
+            
+            .chat-list {
+                flex-direction: column;
+                padding: 0;
+            }
+            
+            .chat-item {
+                flex-direction: row;
+                text-align: left;
+                padding: 12px 16px;
+                border-bottom: 1px solid var(--tg-border);
+                min-width: auto;
+            }
+            
+            .chat-avatar {
+                width: 50px;
+                height: 50px;
+                margin-right: 12px;
+                margin-bottom: 0;
+            }
+            
+            .chat-info,
+            .chat-preview,
+            .chat-time,
+            .unread-count {
+                display: block;
+            }
+        }
+
+        /* Safe area handling for notched devices */
+        @supports (padding: max(0px)) {
+            .tg-app {
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+            }
+            
+            .sidebar-header,
+            .chat-header {
+                padding-top: max(12px, env(safe-area-inset-top));
+            }
+            
+            .input-area {
+                padding-bottom: max(12px, env(safe-area-inset-bottom));
+            }
+            
+            .modal-content {
+                margin-top: max(20px, env(safe-area-inset-top));
+                margin-bottom: max(20px, env(safe-area-inset-bottom));
+            }
+        }
+    </style>
 </head>
 <body>
-    <div id="app" class="telegram-app">
-        <!-- Splash Screen -->
-        <div id="splash-screen" class="splash-screen">
-            <div class="splash-content">
-                <div class="logo-container">
-                    <div class="logo-wave"></div>
-                    <h1 class="logo-title">CipherWave</h1>
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splash-screen">
+        <img src="cipherwave.png" alt="CipherWave Logo" class="splash-logo">
+        <h1 class="splash-title">CipherWave</h1>
+        <p class="splash-subtitle">Secure, Decentralized Messaging</p>
+    </div>
+
+    <!-- Main App -->
+    <div class="tg-app hidden" id="tg-app">
+        <!-- Sidebar -->
+        <div class="tg-sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <img src="cipherwave.png" alt="User" class="user-avatar">
+                    <div class="user-name">Anonymous User</div>
                 </div>
-                <p class="logo-subtitle">Secure, Anonymous, Decentralized</p>
-                <div class="loading-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main App Container -->
-        <div id="main-container" class="main-container hidden">
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <div class="sidebar-header">
-                    <div class="user-avatar online">
-                        <div class="avatar-placeholder">CW</div>
-                    </div>
-                    <div class="sidebar-actions">
-                        <button class="icon-button" id="search-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </button>
-                        <button class="icon-button" id="menu-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="3" y1="12" x2="21" y2="12"></line>
-                                <line x1="3" y1="6" x2="21" y2="6"></line>
-                                <line x1="3" y1="18" x2="21" y2="18"></line>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="chats-list">
-                    <div class="chat-item active">
-                        <div class="chat-avatar">
-                            <div class="avatar-placeholder">R1</div>
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-header">
-                                <h3 class="chat-name">Room 1</h3>
-                                <span class="chat-time">10:30 AM</span>
-                            </div>
-                            <div class="chat-preview">
-                                <p class="last-message">Hey, are you ready for the meeting?</p>
-                                <div class="chat-indicators">
-                                    <span class="unread-count">2</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="chat-item">
-                        <div class="chat-avatar">
-                            <div class="avatar-placeholder">R2</div>
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-header">
-                                <h3 class="chat-name">Room 2</h3>
-                                <span class="chat-time">Yesterday</span>
-                            </div>
-                            <div class="chat-preview">
-                                <p class="last-message">Thanks for the information!</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="chat-item">
-                        <div class="chat-avatar">
-                            <div class="avatar-placeholder">R3</div>
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-header">
-                                <h3 class="chat-name">Room 3</h3>
-                                <span class="chat-time">Wed</span>
-                            </div>
-                            <div class="chat-preview">
-                                <p class="last-message">The file has been encrypted and sent</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sidebar-footer">
-                    <button class="fab-button" id="new-chat-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
+                <div class="sidebar-actions">
+                    <button class="action-btn" id="new-chat-trigger">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn">
+                        <i class="fas fa-ellipsis-v"></i>
                     </button>
                 </div>
             </div>
-
-            <!-- Chat Area -->
-            <div class="chat-area">
-                <div class="chat-header">
-                    <div class="chat-header-info">
-                        <div class="chat-avatar">
-                            <div class="avatar-placeholder">R1</div>
-                        </div>
-                        <div class="chat-title">
-                            <h2>Room 1</h2>
-                            <p>Online</p>
-                        </div>
+            
+            <div class="search-container">
+                <input type="text" class="search-box" placeholder="Search chats...">
+            </div>
+            
+            <div class="chat-list">
+                <div class="chat-item active">
+                    <img src="cipherwave.png" alt="Peer" class="chat-avatar">
+                    <div class="chat-info">
+                        <div class="chat-name">Peer Connection</div>
+                        <div class="chat-preview">Connected to secure channel</div>
                     </div>
-                    <div class="chat-header-actions">
-                        <button class="icon-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="12"></line>
-                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                            </svg>
-                        </button>
-                        <button class="icon-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="3" y1="6" x2="21" y2="6"></line>
-                                <line x1="3" y1="12" x2="21" y2="12"></line>
-                                <line x1="3" y1="18" x2="21" y2="18"></line>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="messages-container">
-                    <div class="message received">
-                        <div class="message-avatar">
-                            <div class="avatar-placeholder">A</div>
-                        </div>
-                        <div class="message-content">
-                            <div class="message-text">
-                                <p>Hey there! How's the project going?</p>
-                            </div>
-                            <div class="message-info">
-                                <span class="message-time">10:25 AM</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="message sent">
-                        <div class="message-content">
-                            <div class="message-text">
-                                <p>Pretty well! I've implemented the new encryption features.</p>
-                            </div>
-                            <div class="message-info">
-                                <span class="message-time">10:27 AM</span>
-                                <span class="message-status delivered">✓✓</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="message received">
-                        <div class="message-avatar">
-                            <div class="avatar-placeholder">A</div>
-                        </div>
-                        <div class="message-content">
-                            <div class="message-text">
-                                <p>That's great! Can you share the documentation?</p>
-                            </div>
-                            <div class="message-info">
-                                <span class="message-time">10:28 AM</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="message sent">
-                        <div class="message-content">
-                            <div class="message-text">
-                                <p>Sure, I'll send it over in a few minutes.</p>
-                            </div>
-                            <div class="message-info">
-                                <span class="message-time">10:30 AM</span>
-                                <span class="message-status">✓</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="message-input-area">
-                    <div class="input-actions">
-                        <button class="icon-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="16"></line>
-                                <line x1="8" y1="12" x2="16" y2="12"></line>
-                            </svg>
-                        </button>
-                        <button class="icon-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="input-container">
-                        <input type="text" id="message-input" placeholder="Type a message..." class="message-input">
-                    </div>
-                    <div class="send-actions">
-                        <button class="icon-button" id="send-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                            </svg>
-                        </button>
+                    <div class="chat-meta">
+                        <div class="chat-time">Now</div>
+                        <div class="unread-count">0</div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Connection Modal -->
-        <div id="connection-modal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Join Network</h2>
-                    <button class="close-button" id="close-modal">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
+        
+        <!-- Main Chat Area -->
+        <div class="tg-main">
+            <div class="chat-header">
+                <div class="contact-info">
+                    <img src="cipherwave.png" alt="Peer" class="contact-avatar">
+                    <div>
+                        <div class="contact-name">Peer Connection</div>
+                        <div class="contact-status" id="peer-status">Online</div>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="chat-action-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="chat-action-btn">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <button class="chat-action-btn">
+                        <i class="fas fa-ellipsis-v"></i>
                     </button>
                 </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="nickname">Nickname</label>
-                        <input type="text" id="nickname" placeholder="Enter your nickname" class="input-field">
-                    </div>
-                    <div class="form-group">
-                        <label>Avatar</label>
-                        <div class="avatar-selection">
-                            <div class="avatar-option selected" data-avatar="avatar1">
-                                <div class="avatar-preview" style="background-color: #6C63FF;"></div>
-                            </div>
-                            <div class="avatar-option" data-avatar="avatar2">
-                                <div class="avatar-preview" style="background-color: #FF6B6B;"></div>
-                            </div>
-                            <div class="avatar-option" data-avatar="avatar3">
-                                <div class="avatar-preview" style="background-color: #4ECDC4;"></div>
-                            </div>
-                            <div class="avatar-option" data-avatar="avatar4">
-                                <div class="avatar-preview" style="background-color: #FFD166;"></div>
-                            </div>
-                            <div class="avatar-option" data-avatar="avatar5">
-                                <div class="avatar-preview" style="background-color: #118AB2;"></div>
-                            </div>
-                        </div>
-                        <input type="hidden" id="selected-avatar" value="avatar1">
-                    </div>
-                    <div class="form-group">
-                        <label for="room-id">Room ID</label>
-                        <div class="input-group">
-                            <input type="text" id="room-id" placeholder="Enter or generate room ID" class="input-field">
-                            <button id="generate-room" class="btn-secondary">Generate</button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="cipher-select">Encryption Cipher</label>
-                        <select id="cipher-select" class="input-field">
-                            <option value="aes">AES-256</option>
-                            <option value="rsa">RSA</option>
-                            <option value="chacha20">ChaCha20</option>
-                        </select>
-                    </div>
-                    <div class="form-actions">
-                        <button id="connect-btn" class="btn-primary">Connect</button>
+            </div>
+            
+            <div class="messages-container" id="messages-container">
+                <div class="message received">
+                    <div class="message-content">Welcome to CipherWave! Your messages are end-to-end encrypted.</div>
+                    <div class="message-time">12:00 PM</div>
+                </div>
+                <div class="message sent">
+                    <div class="message-content">Thanks! How does the encryption work?</div>
+                    <div class="message-time">12:01 PM</div>
+                </div>
+                <div class="message received">
+                    <div class="message-content">We use WebRTC for peer-to-peer communication with AES-256 encryption by default.</div>
+                    <div class="message-time">12:02 PM</div>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <button class="attachment-btn">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <textarea class="message-input" id="message-input" placeholder="Type a message..."></textarea>
+                <button class="send-btn" id="send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- New Chat Button -->
+        <button class="new-chat-btn" id="new-chat-btn">
+            <i class="fas fa-edit"></i>
+        </button>
+    </div>
+
+    <!-- Connection Modal -->
+    <div class="modal" id="connection-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Join Network</h2>
+                <button class="close-btn" id="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Nickname</label>
+                    <input type="text" class="form-control" id="nickname" placeholder="Enter your nickname">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Avatar</label>
+                    <div class="avatar-selection">
+                        <img src="cipherwave.png" alt="Avatar 1" class="avatar-option selected" data-avatar="1">
+                        <img src="cipherwave.png" alt="Avatar 2" class="avatar-option" data-avatar="2">
+                        <img src="cipherwave.png" alt="Avatar 3" class="avatar-option" data-avatar="3">
                     </div>
                 </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Room ID</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="room-id" placeholder="Enter or generate room ID">
+                        <button class="btn btn-primary" id="generate-room" style="margin-top: 10px;">
+                            <i class="fas fa-random"></i> Generate
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Encryption Cipher</label>
+                    <select class="form-control" id="cipher-select">
+                        <option value="aes">AES-256</option>
+                        <option value="rsa">RSA</option>
+                        <option value="chacha20">ChaCha20</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary btn-block" id="connect-btn">
+                    <i class="fas fa-plug"></i> Connect
+                </button>
             </div>
         </div>
     </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="enhanced-security.js"></script>
     <script src="script.js"></script>
+    <script src="optimize-cipherwave.js"></script>
+    <script src="bugfix-connection.js"></script>
+    
+    <!-- Advanced Features -->
+    <script src="advanced-features.js"></script>
+    <script src="adaptive-theme.js"></script>
+    <script src="pwa-manager.js"></script>
+    <script src="voice-manager.js"></script>
+    <script src="realtime-manager.js"></script>
+    <script src="file-manager.js"></script>
+    <script src="thread-manager.js"></script>
+    <script src="security-manager.js"></script>
+    <script>
+        // Initialize CipherWave Advanced Features
+        let cipherWaveAdvanced = null;
+        
+        // Enhanced Telegram-like UI JavaScript with Comprehensive Mobile Support
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Initialize advanced features first
+            try {
+                cipherWaveAdvanced = new CipherWaveAdvanced();
+                window.cipherWaveAdvanced = cipherWaveAdvanced;
+                console.log('🚀 CipherWave Advanced Features initialized');
+            } catch (error) {
+                console.error('❌ Failed to initialize advanced features:', error);
+            }
+            
+            const sidebar = document.querySelector('.tg-sidebar');
+            const messageInput = document.getElementById('message-input');
+            const messagesContainer = document.getElementById('messages-container');
+            const app = document.getElementById('tg-app');
+            const inputArea = document.querySelector('.input-area');
+            
+            let isMobile = window.innerWidth <= 768;
+            let sidebarExpanded = false;
+            let isKeyboardOpen = false;
+            let originalViewportHeight = window.innerHeight;
+            let resizeTimeout;
+
+            // Hide splash screen after 2 seconds with improved transition
+            setTimeout(() => {
+                const splashScreen = document.getElementById('splash-screen');
+                splashScreen.style.opacity = '0';
+                splashScreen.style.transform = 'scale(0.95)';
+                
+                setTimeout(() => {
+                    splashScreen.style.display = 'none';
+                    document.getElementById('tg-app').classList.remove('hidden');
+                    document.getElementById('tg-app').style.opacity = '0';
+                    document.getElementById('tg-app').style.transform = 'translateY(20px)';
+                    
+                    // Animate app entrance
+                    requestAnimationFrame(() => {
+                        document.getElementById('tg-app').style.transition = 'all 0.3s ease-out';
+                        document.getElementById('tg-app').style.opacity = '1';
+                        document.getElementById('tg-app').style.transform = 'translateY(0)';
+                    });
+                }, 300);
+            }, 2000);
+
+            // Enhanced mobile detection with orientation handling
+            function updateMobileState() {
+                const newIsMobile = window.innerWidth <= 768;
+                const orientationChanged = isMobile !== newIsMobile;
+                isMobile = newIsMobile;
+                
+                if (!isMobile && sidebar) {
+                    sidebar.classList.remove('mobile-expanded');
+                    sidebarExpanded = false;
+                }
+                
+                // Update CSS custom properties for dynamic sizing
+                document.documentElement.style.setProperty('--actual-vh', `${window.innerHeight * 0.01}px`);
+                
+                if (orientationChanged) {
+                    // Reset keyboard state on orientation change
+                    isKeyboardOpen = false;
+                    app.classList.remove('mobile-keyboard-open');
+                    originalViewportHeight = window.innerHeight;
+                }
+            }
+
+            // Enhanced sidebar toggle with haptic feedback
+            function toggleSidebar() {
+                if (isMobile && sidebar) {
+                    sidebarExpanded = !sidebarExpanded;
+                    
+                    // Add haptic feedback if available
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                    
+                    if (sidebarExpanded) {
+                        sidebar.classList.add('mobile-expanded');
+                        // Add accessibility announcement
+                        announceToScreenReader('Navigation menu expanded');
+                    } else {
+                        sidebar.classList.remove('mobile-expanded');
+                        announceToScreenReader('Navigation menu collapsed');
+                    }
+                }
+            }
+
+            // Accessibility announcements
+            function announceToScreenReader(message) {
+                const announcement = document.createElement('div');
+                announcement.setAttribute('aria-live', 'polite');
+                announcement.setAttribute('aria-atomic', 'true');
+                announcement.className = 'visually-hidden';
+                announcement.textContent = message;
+                document.body.appendChild(announcement);
+                
+                setTimeout(() => {
+                    document.body.removeChild(announcement);
+                }, 1000);
+            }
+
+            // Enhanced mobile keyboard detection
+            function detectKeyboard() {
+                const currentHeight = window.innerHeight;
+                const heightDifference = originalViewportHeight - currentHeight;
+                const keyboardThreshold = isMobile ? 150 : 300;
+                
+                if (heightDifference > keyboardThreshold && !isKeyboardOpen) {
+                    isKeyboardOpen = true;
+                    app.classList.add('mobile-keyboard-open');
+                    
+                    // Scroll to bottom when keyboard opens
+                    setTimeout(() => {
+                        if (messagesContainer) {
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        }
+                    }, 100);
+                } else if (heightDifference <= keyboardThreshold && isKeyboardOpen) {
+                    isKeyboardOpen = false;
+                    app.classList.remove('mobile-keyboard-open');
+                }
+            }
+
+            // Enhanced touch gesture handling
+            let touchStartY = 0;
+            let touchStartX = 0;
+            let isScrolling = false;
+
+            function handleTouchStart(e) {
+                if (e.touches.length === 1) {
+                    touchStartY = e.touches[0].clientY;
+                    touchStartX = e.touches[0].clientX;
+                    isScrolling = false;
+                }
+            }
+
+            function handleTouchMove(e) {
+                if (e.touches.length === 1 && !isScrolling) {
+                    const touchY = e.touches[0].clientY;
+                    const touchX = e.touches[0].clientX;
+                    const deltaY = touchY - touchStartY;
+                    const deltaX = touchX - touchStartX;
+                    
+                    // Determine scroll direction
+                    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+                        isScrolling = true;
+                        
+                        // Prevent pull-to-refresh on overscroll
+                        if (window.pageYOffset === 0 && deltaY > 0) {
+                            e.preventDefault();
+                        }
+                    }
+                }
+            }
+
+            // Add mobile toggle functionality with improved event handling
+            function addSidebarToggleHandlers() {
+                const sidebarHeader = document.querySelector('.sidebar-header');
+                if (sidebarHeader) {
+                    // Remove existing listeners to prevent duplicates
+                    sidebarHeader.removeEventListener('click', handleSidebarToggle);
+                    sidebarHeader.addEventListener('click', handleSidebarToggle);
+                    
+                    // Add touch feedback
+                    sidebarHeader.addEventListener('touchstart', addTouchFeedback, { passive: true });
+                    sidebarHeader.addEventListener('touchend', removeTouchFeedback, { passive: true });
+                    sidebarHeader.addEventListener('touchcancel', removeTouchFeedback, { passive: true });
+                }
+            }
+
+            function handleSidebarToggle(e) {
+                if (isMobile) {
+                    e.preventDefault();
+                    toggleSidebar();
+                }
+            }
+
+            // Enhanced touch feedback system
+            function addTouchFeedback(e) {
+                const element = e.currentTarget;
+                element.classList.add('touch-feedback');
+            }
+
+            function removeTouchFeedback(e) {
+                const element = e.currentTarget;
+                setTimeout(() => {
+                    element.classList.remove('touch-feedback');
+                }, 150);
+            }
+
+            // Close sidebar when clicking outside on mobile with improved detection
+            function handleOutsideClick(e) {
+                if (isMobile && sidebarExpanded && sidebar && !sidebar.contains(e.target)) {
+                    sidebar.classList.remove('mobile-expanded');
+                    sidebarExpanded = false;
+                }
+            }
+
+            // Prevent body scroll when modal is open
+            function preventBodyScroll(prevent) {
+                if (prevent) {
+                    document.body.classList.add('no-scroll');
+                } else {
+                    document.body.classList.remove('no-scroll');
+                }
+            }
+            
+            // Enhanced modal functionality with mobile optimizations
+            const modal = document.getElementById('connection-modal');
+            const newChatBtn = document.getElementById('new-chat-btn');
+            const newChatTrigger = document.getElementById('new-chat-trigger');
+            const closeModal = document.getElementById('close-modal');
+            const connectBtn = document.getElementById('connect-btn');
+            
+            function openModal() {
+                modal.classList.add('active');
+                preventBodyScroll(true);
+                
+                // Focus management for accessibility
+                const firstFocusable = modal.querySelector('input, button, select, textarea');
+                if (firstFocusable) {
+                    setTimeout(() => firstFocusable.focus(), 100);
+                }
+                
+                announceToScreenReader('Connection dialog opened');
+            }
+
+            function closeModalFunc() {
+                modal.classList.remove('active');
+                preventBodyScroll(false);
+                announceToScreenReader('Connection dialog closed');
+            }
+            
+            if (newChatBtn) newChatBtn.addEventListener('click', openModal);
+            if (newChatTrigger) newChatTrigger.addEventListener('click', openModal);
+            if (closeModal) closeModal.addEventListener('click', closeModalFunc);
+
+            // Enhanced modal interaction handling
+            if (modal) {
+                // Close modal on background click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        closeModalFunc();
+                    }
+                });
+
+                // Close modal on Escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && modal.classList.contains('active')) {
+                        closeModalFunc();
+                    }
+                });
+            }
+            
+            // Enhanced avatar selection with accessibility
+            const avatarOptions = document.querySelectorAll('.avatar-option');
+            avatarOptions.forEach((option, index) => {
+                option.setAttribute('role', 'button');
+                option.setAttribute('tabindex', '0');
+                option.setAttribute('aria-label', `Avatar option ${index + 1}`);
+                
+                const handleSelection = () => {
+                    avatarOptions.forEach(opt => {
+                        opt.classList.remove('selected');
+                        opt.setAttribute('aria-selected', 'false');
+                    });
+                    option.classList.add('selected');
+                    option.setAttribute('aria-selected', 'true');
+                    announceToScreenReader(`Avatar ${index + 1} selected`);
+                };
+                
+                option.addEventListener('click', handleSelection);
+                option.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleSelection();
+                    }
+                });
+            });
+            
+            // Enhanced room ID generation
+            const generateRoomBtn = document.getElementById('generate-room');
+            const roomIdInput = document.getElementById('room-id');
+            
+            if (generateRoomBtn && roomIdInput) {
+                generateRoomBtn.addEventListener('click', () => {
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                    let roomId = '';
+                    for (let i = 0; i < 20; i++) {
+                        roomId += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    roomIdInput.value = roomId;
+                    announceToScreenReader('New room ID generated');
+                    
+                    // Add visual feedback
+                    generateRoomBtn.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        generateRoomBtn.style.transform = '';
+                    }, 150);
+                });
+            }
+            
+            // Enhanced message sending functionality
+            const sendBtn = document.getElementById('send-btn');
+            
+            function sendMessage() {
+                const message = messageInput.value.trim();
+                if (!message || message.length === 0) return;
+                
+                // Check if thread manager wants to handle this message
+                if (cipherWaveAdvanced?.threadManager?.handleMessageSend(message)) {
+                    messageInput.value = '';
+                    return;
+                }
+                
+                if (message && message.length > 0) {
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'message sent';
+                    messageElement.setAttribute('role', 'article');
+                    messageElement.setAttribute('aria-label', `Sent message: ${message}`);
+                    messageElement.innerHTML = `
+                        <div class="message-content">${escapeHtml(message)}</div>
+                        <div class="message-time">${timeString}</div>
+                    `;
+                    
+                    messagesContainer.appendChild(messageElement);
+                    messageInput.value = '';
+                    
+                    // Smooth scroll to bottom with animation
+                    messagesContainer.scrollTo({
+                        top: messagesContainer.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                    
+                    // Reset textarea height
+                    messageInput.style.height = 'auto';
+                    
+                    // Haptic feedback
+                    if (navigator.vibrate) {
+                        navigator.vibrate(30);
+                    }
+                    
+                    announceToScreenReader('Message sent');
+                }
+            }
+            
+            // HTML escaping for security
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            if (sendBtn) {
+                sendBtn.addEventListener('click', sendMessage);
+                
+                // Enhanced send button feedback
+                sendBtn.addEventListener('touchstart', () => {
+                    sendBtn.style.transform = 'scale(0.9)';
+                }, { passive: true });
+                
+                sendBtn.addEventListener('touchend', () => {
+                    sendBtn.style.transform = '';
+                }, { passive: true });
+            }
+            
+            // Enhanced message input handling
+            if (messageInput) {
+                messageInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+                
+                // Auto-resize textarea with mobile optimization and performance
+                let resizeTimeout;
+                messageInput.addEventListener('input', function() {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        this.style.height = 'auto';
+                        const maxHeight = isMobile ? 120 : 160;
+                        this.style.height = Math.min(this.scrollHeight, maxHeight) + 'px';
+                    }, 10);
+                });
+
+                // Enhanced focus handling for mobile
+                messageInput.addEventListener('focus', function() {
+                    if (isMobile) {
+                        // Delay scroll to allow keyboard animation
+                        setTimeout(() => {
+                            detectKeyboard();
+                            if (messagesContainer) {
+                                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                            }
+                        }, 300);
+                    }
+                });
+
+                messageInput.addEventListener('blur', function() {
+                    if (isMobile) {
+                        setTimeout(() => {
+                            detectKeyboard();
+                        }, 300);
+                    }
+                });
+            }
+
+            // Enhanced event listeners setup
+            function setupEventListeners() {
+                // Window resize with debouncing
+                let resizeDebounce;
+                window.addEventListener('resize', function() {
+                    clearTimeout(resizeDebounce);
+                    resizeDebounce = setTimeout(() => {
+                        updateMobileState();
+                        detectKeyboard();
+                    }, 100);
+                });
+
+                // Orientation change handling
+                window.addEventListener('orientationchange', function() {
+                    setTimeout(() => {
+                        updateMobileState();
+                        originalViewportHeight = window.innerHeight;
+                    }, 500);
+                });
+
+                // Enhanced touch event handling
+                document.addEventListener('touchstart', handleTouchStart, { passive: true });
+                document.addEventListener('touchmove', handleTouchMove, { passive: false });
+                document.addEventListener('click', handleOutsideClick);
+
+                // Viewport height change detection for keyboard
+                let viewportHeightCheck;
+                window.addEventListener('resize', () => {
+                    clearTimeout(viewportHeightCheck);
+                    viewportHeightCheck = setTimeout(detectKeyboard, 150);
+                });
+
+                // Prevent zoom on double tap for iOS
+                let lastTouchEnd = 0;
+                document.addEventListener('touchend', function (event) {
+                    const now = (new Date()).getTime();
+                    if (now - lastTouchEnd <= 300) {
+                        event.preventDefault();
+                    }
+                    lastTouchEnd = now;
+                }, false);
+            }
+
+            // Enhanced accessibility improvements
+            function setupAccessibility() {
+                // Add ARIA labels to key elements
+                if (messageInput) {
+                    messageInput.setAttribute('aria-label', 'Type your message');
+                }
+                
+                if (sendBtn) {
+                    sendBtn.setAttribute('aria-label', 'Send message');
+                }
+                
+                if (messagesContainer) {
+                    messagesContainer.setAttribute('role', 'log');
+                    messagesContainer.setAttribute('aria-live', 'polite');
+                    messagesContainer.setAttribute('aria-label', 'Chat messages');
+                }
+                
+                // Add skip link for keyboard navigation
+                const skipLink = document.createElement('a');
+                skipLink.href = '#message-input';
+                skipLink.textContent = 'Skip to message input';
+                skipLink.className = 'visually-hidden';
+                skipLink.addEventListener('focus', () => {
+                    skipLink.style.position = 'fixed';
+                    skipLink.style.top = '10px';
+                    skipLink.style.left = '10px';
+                    skipLink.style.zIndex = '9999';
+                    skipLink.style.background = 'white';
+                    skipLink.style.padding = '8px';
+                    skipLink.style.border = '2px solid black';
+                    skipLink.classList.remove('visually-hidden');
+                });
+                skipLink.addEventListener('blur', () => {
+                    skipLink.classList.add('visually-hidden');
+                });
+                document.body.insertBefore(skipLink, document.body.firstChild);
+            }
+
+            // Performance optimization for mobile
+            function optimizePerformance() {
+                // Use passive event listeners where possible
+                const passiveEvents = ['touchstart', 'touchend', 'touchcancel', 'wheel'];
+                passiveEvents.forEach(eventType => {
+                    document.addEventListener(eventType, () => {}, { passive: true });
+                });
+
+                // Optimize scroll events
+                let ticking = false;
+                function updateScrollPosition() {
+                    // Optimize scroll-based animations
+                    ticking = false;
+                }
+
+                messagesContainer?.addEventListener('scroll', () => {
+                    if (!ticking) {
+                        requestAnimationFrame(updateScrollPosition);
+                        ticking = true;
+                    }
+                });
+            }
+
+            // Initialize all functionality
+            function init() {
+                updateMobileState();
+                addSidebarToggleHandlers();
+                setupEventListeners();
+                setupAccessibility();
+                optimizePerformance();
+                
+                // Set initial focus for accessibility
+                if (messageInput && !isMobile) {
+                    messageInput.focus();
+                }
+            }
+
+            // Initialize after DOM is ready
+            init();
+            
+            // Integration with advanced features
+            if (cipherWaveAdvanced) {
+                // Hook into voice manager for incoming voice messages
+                if (window.voiceManager) {
+                    window.voiceManager.setup();
+                }
+                
+                // Hook into WebRTC data channel for advanced message handling
+                const originalOnMessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        // Route to appropriate advanced feature handlers
+                        if (data.type === 'voice-message') {
+                            if (window.voiceManager) {
+                                window.voiceManager.handleIncomingVoiceMessage(data);
+                            } else if (cipherWaveAdvanced.voiceManager) {
+                                cipherWaveAdvanced.voiceManager.handleIncomingVoiceMessage(data);
+                            }
+                        } else if (data.type === 'file-share' && cipherWaveAdvanced.fileManager) {
+                            cipherWaveAdvanced.fileManager.handleIncomingFileData(data);
+                        } else if (['reply-message', 'forward-message'].includes(data.type) && cipherWaveAdvanced.threadManager) {
+                            cipherWaveAdvanced.threadManager.handleIncomingThreadData(data);
+                        } else if (['typing-status', 'message-reaction', 'read-receipt', 'activity-status', 'presence-update'].includes(data.type) && cipherWaveAdvanced.realtimeManager) {
+                            cipherWaveAdvanced.realtimeManager.handleIncomingRealtimeData(data);
+                        } else if (data.type === 'message') {
+                            // Handle regular message
+                            const decryptedMessage = decryptMessage(data.content, currentCipher);
+                            displayMessage(decryptedMessage, 'received');
+                        }
+                    } catch (error) {
+                        console.error('Error processing message:', error);
+                    }
+                };
+                
+                // Hook into existing data channel setup
+                window.originalSetupDataChannel = window.setupDataChannel;
+                window.setupDataChannel = function(channel) {
+                    if (window.originalSetupDataChannel) {
+                        window.originalSetupDataChannel(channel);
+                    }
+                    
+                    // Replace the onmessage handler with our enhanced version
+                    channel.onmessage = originalOnMessage;
+                };
+                
+                // Enhanced display message function
+                window.originalDisplayMessage = window.displayMessage;
+                window.displayMessage = function(message, type, messageId) {
+                    const messageElement = window.originalDisplayMessage ? 
+                        window.originalDisplayMessage(message, type, messageId) : 
+                        null;
+                    
+                    if (messageElement && cipherWaveAdvanced) {
+                        // Add advanced features to the message
+                        if (cipherWaveAdvanced.threadManager) {
+                            cipherWaveAdvanced.threadManager.addMessageActionsToMessage(messageElement);
+                            cipherWaveAdvanced.threadManager.addCheckboxToMessage(messageElement);
+                        }
+                        
+                        if (cipherWaveAdvanced.securityManager) {
+                            cipherWaveAdvanced.securityManager.addEncryptionIndicatorToMessage(messageElement);
+                        }
+                        
+                        if (cipherWaveAdvanced.realtimeManager && cipherWaveAdvanced.realtimeManager.messageObserver) {
+                            cipherWaveAdvanced.realtimeManager.messageObserver.observe(messageElement);
+                        }
+                    }
+                    
+                    return messageElement;
+                };
+            }
+
+            // Expose enhanced API
+            window.CipherWaveMobile = {
+                toggleSidebar,
+                isMobile: () => isMobile,
+                isKeyboardOpen: () => isKeyboardOpen,
+                openModal,
+                closeModal: closeModalFunc,
+                updateMobileState,
+                announceToScreenReader
+            };
+        });
+    </script>
 </body>
 </html>
