@@ -7,11 +7,12 @@ const messageInput = document.getElementById('message-input');
 const sendBtn = document.getElementById('send-btn');
 const roomIdInput = document.getElementById('room-id');
 const generateRoomBtn = document.getElementById('generate-room');
-const cipherSelect = document.getElementById('cipher-select');
+// const cipherSelect = document.getElementById('cipher-select'); // Removed - using default AES
 const connectBtn = document.getElementById('connect-btn');
 const closeModal = document.getElementById('close-modal');
 const peerStatus = document.getElementById('peer-status');
 const nicknameInput = document.getElementById('nickname');
+const connectionIndicator = document.getElementById('connection-indicator');
 
 // Application State
 let peerConnection = null;
@@ -48,6 +49,20 @@ const configuration = {
 
 // Connection timeout values
 const CONNECTION_TIMEOUT = 15000;
+
+// Update connection status indicator
+function updateConnectionStatus(status, text) {
+    if (connectionIndicator) {
+        connectionIndicator.className = `connection-indicator ${status}`;
+        const statusText = connectionIndicator.querySelector('.status-text');
+        if (statusText) {
+            statusText.textContent = text;
+        }
+    }
+    if (peerStatus) {
+        peerStatus.textContent = text;
+    }
+}
 const ICE_TIMEOUT = 8000;
 const ICE_GATHERING_TIMEOUT = 5000;
 
@@ -108,13 +123,6 @@ function generateRoomId() {
     return roomId;
 }
 
-// Update connection status display
-function updateConnectionStatus(text, color = 'black') {
-    if (peerStatus) {
-        peerStatus.textContent = text;
-        peerStatus.style.color = color;
-    }
-}
 
 // Generate room ID on button click
 if (generateRoomBtn && roomIdInput) {
@@ -123,12 +131,9 @@ if (generateRoomBtn && roomIdInput) {
     });
 }
 
-// Update cipher selection
-if (cipherSelect) {
-    cipherSelect.addEventListener('change', () => {
-        currentCipher = cipherSelect.value;
-    });
-}
+// Default cipher (removed selection UI for simplicity)
+currentCipher = 'aes';
+console.log('🔐 Using default encryption cipher:', currentCipher);
 
 // Connect to room
 if (connectBtn) {
@@ -140,7 +145,7 @@ if (connectBtn) {
         }
 
         // Set connection status
-        updateConnectionStatus('Connecting...', '#FF9800');
+        updateConnectionStatus('connecting', 'Connecting...');
 
         // Connect to signaling server
         let serverUrl;
@@ -160,7 +165,7 @@ if (connectBtn) {
                 throw new Error('No available signaling servers');
             }
         } catch (err) {
-            updateConnectionStatus('Connection failed', '#F44336');
+            updateConnectionStatus('disconnected', 'Connection failed');
             return;
         }
 
@@ -203,7 +208,7 @@ function logConnectionState(state) {
 function startConnection() {
     try {
         // Update connection status
-        updateConnectionStatus('Establishing connection...', '#FF9800');
+        updateConnectionStatus('connecting', 'Establishing connection...');
         logConnectionState('Starting WebRTC connection setup');
         
         // Create peer connection
@@ -215,7 +220,7 @@ function startConnection() {
             if (peerConnection.connectionState !== 'connected' && 
                 peerConnection.connectionState !== 'completed') {
                 logConnectionState('Connection timeout');
-                updateConnectionStatus('Connection timeout', '#F44336');
+                updateConnectionStatus('disconnected', 'Connection timeout');
             }
         }, CONNECTION_TIMEOUT);
         
@@ -239,10 +244,10 @@ function startConnection() {
             
             if (peerConnection.iceConnectionState === 'connected' || 
                 peerConnection.iceConnectionState === 'completed') {
-                updateConnectionStatus('Online', '#4CAF50');
+                updateConnectionStatus('connected', 'Connected');
             } else if (peerConnection.iceConnectionState === 'disconnected' || 
                       peerConnection.iceConnectionState === 'failed') {
-                updateConnectionStatus('Offline', '#F44336');
+                updateConnectionStatus('disconnected', 'Disconnected');
             }
         };
         
@@ -292,7 +297,7 @@ function startConnection() {
                 .catch(error => {
                     logConnectionState(`Error creating offer: ${error.message}`);
                     console.error('Error creating offer:', error);
-                    updateConnectionStatus('Connection failed', '#F44336');
+                    updateConnectionStatus('disconnected', 'Connection failed');
                 });
         } else {
             logConnectionState('Waiting for data channel (non-initiator)');
@@ -307,7 +312,7 @@ function startConnection() {
     } catch (error) {
         logConnectionState(`Error starting connection: ${error.message}`);
         console.error('Error starting connection:', error);
-        updateConnectionStatus('Connection failed', '#F44336');
+        updateConnectionStatus('disconnected', 'Connection failed');
     }
 }
 
@@ -375,7 +380,7 @@ function handleSignalingMessage(message) {
 function setupDataChannel(channel) {
     channel.onopen = () => {
         isConnected = true;
-        updateConnectionStatus('Online', '#4CAF50');
+        updateConnectionStatus('connected', 'Connected');
         
         // Close connection modal
         const modal = document.getElementById('connection-modal');
@@ -387,13 +392,13 @@ function setupDataChannel(channel) {
     
     channel.onclose = () => {
         isConnected = false;
-        updateConnectionStatus('Offline', '#F44336');
+        updateConnectionStatus('disconnected', 'Disconnected');
     };
     
     channel.onerror = (error) => {
         logConnectionState(`Data channel error: ${error.message}`);
         console.error('Data channel error:', error);
-        updateConnectionStatus('Connection error', '#F44336');
+        updateConnectionStatus('disconnected', 'Connection error');
     };
     
     channel.onmessage = event => {
@@ -422,7 +427,7 @@ function disconnect() {
     signaling.disconnect();
 
     isConnected = false;
-    updateConnectionStatus('Offline', '#F44336');
+    updateConnectionStatus('disconnected', 'Disconnected');
 }
 
 // Send message
@@ -577,5 +582,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Set initial connection status
-    updateConnectionStatus('Offline', '#F44336');
+    updateConnectionStatus('disconnected', 'Disconnected');
 });

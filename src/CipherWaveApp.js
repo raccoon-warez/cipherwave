@@ -516,7 +516,23 @@ class CipherWaveApp {
         const { files } = event.detail;
         this.log(`Sending ${files.length} files`);
         
-        // TODO: Implement file sending
+        // Send files through connection manager if connected
+        if (this.connectionManager && this.connectionManager.isConnected()) {
+            files.forEach(file => {
+                this.connectionManager.sendMessage({
+                    type: 'file',
+                    fileName: file.name,
+                    fileSize: file.size,
+                    fileType: file.type,
+                    data: file.data,
+                    encrypted: file.encrypted
+                });
+            });
+            this.log('Files sent successfully');
+        } else {
+            this.log('Cannot send files: not connected');
+        }
+        
         if (this.components.fileManager) {
             this.components.fileManager.hide();
         }
@@ -609,28 +625,54 @@ class CipherWaveApp {
         const port = portInput ? parseInt(portInput.value) : 52178;
         
         this.log(`Starting signaling node on port ${port}`);
-        // TODO: Implement node hosting
         
-        const startBtn = this.container.querySelector('#start-node-btn');
-        const stopBtn = this.container.querySelector('#stop-node-btn');
-        
-        if (startBtn) startBtn.disabled = true;
-        if (stopBtn) stopBtn.disabled = false;
-        
-        this.updateConnectionStatus('Node running on port ' + port);
+        // Check if node-host.js is available
+        if (typeof window.startNode === 'function') {
+            try {
+                window.startNode(port);
+                this.log(`Signaling node started on port ${port}`);
+                
+                const startBtn = this.container.querySelector('#start-node-btn');
+                const stopBtn = this.container.querySelector('#stop-node-btn');
+                
+                if (startBtn) startBtn.disabled = true;
+                if (stopBtn) stopBtn.disabled = false;
+                
+                this.updateConnectionStatus('Node running on port ' + port);
+            } catch (error) {
+                this.log('Failed to start signaling node:', error.message);
+                this.showError('Failed to start node: ' + error.message);
+            }
+        } else {
+            this.log('Node hosting functionality not available');
+            this.showError('Node hosting functionality not available. Please ensure node-host.js is loaded.');
+        }
     }
     
     handleStopNode() {
         this.log('Stopping signaling node');
-        // TODO: Implement node stopping
         
-        const startBtn = this.container.querySelector('#start-node-btn');
-        const stopBtn = this.container.querySelector('#stop-node-btn');
-        
-        if (startBtn) startBtn.disabled = false;
-        if (stopBtn) stopBtn.disabled = true;
-        
-        this.updateConnectionStatus('disconnected');
+        // Check if node-host.js is available
+        if (typeof window.stopNode === 'function') {
+            try {
+                window.stopNode();
+                this.log('Signaling node stopped');
+                
+                const startBtn = this.container.querySelector('#start-node-btn');
+                const stopBtn = this.container.querySelector('#stop-node-btn');
+                
+                if (startBtn) startBtn.disabled = false;
+                if (stopBtn) stopBtn.disabled = true;
+                
+                this.updateConnectionStatus('disconnected');
+            } catch (error) {
+                this.log('Failed to stop signaling node:', error.message);
+                this.showError('Failed to stop node: ' + error.message);
+            }
+        } else {
+            this.log('Node stopping functionality not available');
+            this.showError('Node stopping functionality not available. Please ensure node-host.js is loaded.');
+        }
     }
     
     handleConnectionEstablished() {
@@ -887,14 +929,92 @@ class CipherWaveApp {
     
     runConnectionTest() {
         this.log('Running connection test...');
-        // TODO: Implement connection test
-        this.log('Connection test completed');
+        
+        // Test WebSocket connectivity
+        const testUrl = 'wss://echo.websocket.org';
+        let success = false;
+        
+        try {
+            const ws = new WebSocket(testUrl);
+            
+            ws.onopen = () => {
+                this.log('WebSocket connection test: SUCCESS');
+                success = true;
+                ws.close();
+            };
+            
+            ws.onerror = (error) => {
+                this.log('WebSocket connection test: FAILED -', error.message);
+                ws.close();
+            };
+            
+            ws.onclose = () => {
+                if (!success) {
+                    this.log('WebSocket connection test: FAILED - Connection closed unexpectedly');
+                }
+                this.log('Connection test completed');
+            };
+            
+            // Set a timeout
+            setTimeout(() => {
+                if (!success) {
+                    this.log('WebSocket connection test: FAILED - Timeout');
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.close();
+                    }
+                }
+            }, 5000);
+            
+        } catch (error) {
+            this.log('WebSocket connection test: FAILED -', error.message);
+            this.log('Connection test completed');
+        }
     }
     
     runCryptoTest() {
         this.log('Running crypto test...');
-        // TODO: Implement crypto test
-        this.log('Crypto test completed');
+        
+        try {
+            // Test basic encryption/decryption
+            const testMessage = 'Hello, CipherWave!';
+            this.log('Testing encryption with message:', testMessage);
+            
+            // Test with security manager if available
+            if (this.securityManager && this.securityManager.encryptMessage && this.securityManager.decryptMessage) {
+                this.securityManager.encryptMessage(testMessage)
+                    .then(encrypted => {
+                        this.log('Encryption test: SUCCESS - Message encrypted');
+                        return this.securityManager.decryptMessage(encrypted);
+                    })
+                    .then(decrypted => {
+                        if (decrypted === testMessage) {
+                            this.log('Decryption test: SUCCESS - Message decrypted correctly');
+                        } else {
+                            this.log('Decryption test: FAILED - Decrypted message does not match original');
+                        }
+                        this.log('Crypto test completed');
+                    })
+                    .catch(error => {
+                        this.log('Crypto test: FAILED -', error.message);
+                        this.log('Crypto test completed');
+                    });
+            } else {
+                // Fallback test using base64 encoding
+                this.log('SecurityManager not available, using fallback encryption test');
+                const encoded = btoa(unescape(encodeURIComponent(testMessage)));
+                this.log('Base64 encoding test: SUCCESS - Message encoded');
+                const decoded = decodeURIComponent(escape(atob(encoded)));
+                if (decoded === testMessage) {
+                    this.log('Base64 decoding test: SUCCESS - Message decoded correctly');
+                } else {
+                    this.log('Base64 decoding test: FAILED - Decoded message does not match original');
+                }
+                this.log('Crypto test completed');
+            }
+        } catch (error) {
+            this.log('Crypto test: FAILED -', error.message);
+            this.log('Crypto test completed');
+        }
     }
     
     showMemoryInfo() {
@@ -959,8 +1079,30 @@ class CipherWaveApp {
     }
     
     autoConnect() {
-        // TODO: Implement auto-connect logic
-        this.log('Auto-connect is enabled but not yet implemented');
+        this.log('Attempting auto-connect...');
+        
+        // Check if we have a saved room ID
+        if (this.state.roomId) {
+            this.log('Found saved room ID, attempting to connect...');
+            
+            // Set a small delay to allow UI to initialize
+            setTimeout(() => {
+                const roomInput = this.container.querySelector('#room-id-input');
+                if (roomInput) {
+                    roomInput.value = this.state.roomId;
+                }
+                
+                // Automatically show the join form
+                this.showConnectionForm('join');
+                
+                // Attempt to connect after a short delay
+                setTimeout(() => {
+                    this.handleConnect();
+                }, 500);
+            }, 100);
+        } else {
+            this.log('No saved room ID found for auto-connect');
+        }
     }
     
     // Logging
