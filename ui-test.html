@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherWave UI Test - Visual Elements Check</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #0f1419;
+            color: white;
+            line-height: 1.6;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #1a1f29;
+            border-radius: 8px;
+            border: 1px solid #2a3441;
+        }
+        
+        .test-title {
+            color: #0088cc;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #2a3441;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .emoji-test {
+            font-size: 2rem;
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji", "Android Emoji", "EmojiSymbols", sans-serif;
+        }
+        
+        .fa-test {
+            font-size: 1.5rem;
+            color: #0088cc;
+        }
+        
+        .status-good {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .status-bad {
+            color: #F44336;
+            font-weight: bold;
+        }
+        
+        .logo-test {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 2rem;
+            color: #0088cc;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .avatar-test {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #0088cc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            position: relative;
+        }
+        
+        .avatar-test img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: #0088cc; margin-bottom: 30px;">
+        🔐 CipherWave UI Visual Elements Test
+    </h1>
+    
+    <div class="test-section">
+        <div class="test-title">1. Emoji Display Test</div>
+        <div class="test-item">
+            <span class="emoji-test">🔐</span>
+            <span>Lock emoji (main logo)</span>
+        </div>
+        <div class="test-item">
+            <span class="emoji-test">🖥️</span>
+            <span>Desktop computer emoji (host node)</span>
+        </div>
+        <div class="test-item">
+            <span class="emoji-test">🌐</span>
+            <span>Globe emoji (join network)</span>
+        </div>
+        <div class="test-item">
+            <span class="emoji-test">📤</span>
+            <span>Outbox tray emoji (send message)</span>
+        </div>
+        <div class="test-item">
+            <span class="emoji-test">👤</span>
+            <span>User silhouette (user avatar)</span>
+        </div>
+        <div class="test-item">
+            <span class="emoji-test">💬</span>
+            <span>Speech bubble (chat)</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">2. Font Awesome Icons Test</div>
+        <div class="test-item">
+            <i class="fa-test fas fa-shield-alt"></i>
+            <span>Shield (fa-shield-alt)</span>
+        </div>
+        <div class="test-item">
+            <i class="fa-test fas fa-server"></i>
+            <span>Server (fa-server)</span>
+        </div>
+        <div class="test-item">
+            <i class="fa-test fas fa-network-wired"></i>
+            <span>Network (fa-network-wired)</span>
+        </div>
+        <div class="test-item">
+            <i class="fa-test fas fa-paper-plane"></i>
+            <span>Paper plane (fa-paper-plane)</span>
+        </div>
+        <div class="test-item">
+            <i class="fa-test fas fa-lock"></i>
+            <span>Lock (fa-lock)</span>
+        </div>
+        <div class="test-item">
+            <i class="fa-test fas fa-plus"></i>
+            <span>Plus (fa-plus)</span>
+        </div>
+        <div class="test-item">
+            <i class="fa-test fas fa-times"></i>
+            <span>Times (fa-times)</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">3. Logo Display Test</div>
+        <div class="logo-test">
+            <span class="emoji-test">🔐</span>
+            <span>CipherWave</span>
+        </div>
+        <div class="logo-test">
+            <i class="fas fa-shield-alt" style="color: #0088cc;"></i>
+            <span>CipherWave (with FA icon)</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">4. Avatar/Image Test</div>
+        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+            <div class="avatar-test">
+                <img src="cipherwave.png" alt="Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='🔐';">
+            </div>
+            <div class="avatar-test">
+                <img src="./cipherwave.png" alt="Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='🔐';">
+            </div>
+            <div class="avatar-test">
+                <img src="/cipherwave.png" alt="Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='🔐';">
+            </div>
+            <div class="avatar-test">
+                🔐
+            </div>
+        </div>
+        <p style="margin-top: 10px; font-size: 0.9rem; color: #8899a6;">
+            Testing different image paths - should fallback to emoji if images fail
+        </p>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">5. Browser Support Check</div>
+        <div id="support-check"></div>
+    </div>
+
+    <script>
+        // Check browser support
+        function checkSupport() {
+            const checks = [
+                { name: 'WebRTC Support', test: () => !!window.RTCPeerConnection },
+                { name: 'WebSocket Support', test: () => !!window.WebSocket },
+                { name: 'Crypto Support', test: () => !!window.crypto },
+                { name: 'ES6 Modules', test: () => typeof Symbol !== 'undefined' },
+                { name: 'Fetch API', test: () => !!window.fetch },
+                { name: 'Local Storage', test: () => !!window.localStorage },
+                { name: 'Service Worker', test: () => 'serviceWorker' in navigator }
+            ];
+
+            const supportDiv = document.getElementById('support-check');
+            supportDiv.innerHTML = checks.map(check => {
+                const supported = check.test();
+                return `
+                    <div class="test-item">
+                        <span class="${supported ? 'status-good' : 'status-bad'}">
+                            ${supported ? '✅' : '❌'}
+                        </span>
+                        <span>${check.name}: ${supported ? 'Supported' : 'Not Supported'}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Run support check when page loads
+        document.addEventListener('DOMContentLoaded', checkSupport);
+
+        // Add some interactive tests
+        console.log('🔐 CipherWave UI Test Page Loaded');
+        console.log('User Agent:', navigator.userAgent);
+        console.log('Emoji Test: 🔐🖥️🌐📤👤💬');
+        
+        // Test emoji rendering
+        setTimeout(() => {
+            const emojiTests = document.querySelectorAll('.emoji-test');
+            emojiTests.forEach((elem, index) => {
+                console.log(`Emoji ${index + 1}:`, elem.textContent, 'Font:', window.getComputedStyle(elem).fontFamily);
+            });
+        }, 1000);
+    </script>
+</body>
+</html>

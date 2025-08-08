@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CipherWave - Secure P2P Messenger</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Fallback for Font Awesome -->
+    <style>
+        /* Emoji fallbacks for Font Awesome icons */
+        .fa-shield-alt:before, .fas.fa-shield-alt:before { content: "🔐"; font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif; }
+        .fa-server:before, .fas.fa-server:before { content: "🖥️"; font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif; }
+        .fa-network-wired:before, .fas.fa-network-wired:before { content: "🌐"; font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif; }
+        .fa-lock:before, .fas.fa-lock:before { content: "🔒"; font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif; }
+        .fa-paper-plane:before, .fas.fa-paper-plane:before { content: "📤"; font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif; }
+        .fa-plus:before, .fas.fa-plus:before { content: "➕"; font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif; }
+        .fa-times:before, .fas.fa-times:before { content: "❌"; font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif; }
+        .fa-dice:before, .fas.fa-dice:before { content: "🎲"; font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif; }
+        .fa-plug:before, .fas.fa-plug:before { content: "🔌"; font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif; }
+    </style>
     <style>
         * {
             margin: 0;
@@ -35,6 +48,21 @@
             font-weight: bold;
             color: #0088cc;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .logo .logo-icon {
+            font-size: 2.5rem;
+            display: inline-block;
+        }
+        
+        /* Emoji fallback system */
+        .emoji-fallback {
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji", "Android Emoji", "EmojiSymbols", sans-serif;
+            font-style: normal;
         }
 
         .subtitle {
@@ -411,8 +439,8 @@
     <div class="container">
         <div class="header">
             <div class="logo">
-                <i class="fas fa-shield-alt"></i>
-                CipherWave
+                <span class="logo-icon emoji-fallback">🔐</span>
+                <span>CipherWave</span>
             </div>
             <div class="subtitle">End-to-End Encrypted P2P Messenger</div>
         </div>
@@ -422,11 +450,11 @@
             <div class="panel-title">Choose Connection Mode</div>
             <div class="mode-selection">
                 <button class="mode-btn" id="host-node-btn">
-                    <i class="fas fa-server"></i>
+                    <span class="emoji-fallback">🖥️</span>
                     Host Node
                 </button>
                 <button class="mode-btn" id="join-network-btn">
-                    <i class="fas fa-network-wired"></i>
+                    <span class="emoji-fallback">🌐</span>
                     Join Network
                 </button>
             </div>
@@ -461,14 +489,14 @@
             <div class="panel-title">Secure Chat</div>
             <div id="messages" class="messages">
                 <div style="text-align: center; color: #8899a6; padding: 20px;" class="encryption-notice">
-                    <i class="fas fa-lock" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <div class="emoji-fallback" style="font-size: 3rem; margin-bottom: 15px;">🔒</div>
                     <p>Messages are end-to-end encrypted.<br>Only you and the recipient can read them.</p>
                 </div>
             </div>
             <div class="message-input-group">
                 <textarea id="message-input" class="message-input" placeholder="Type a message..." maxlength="5000" rows="1"></textarea>
                 <button class="btn" id="send-btn">
-                    <i class="fas fa-paper-plane"></i>
+                    <span class="emoji-fallback">📤</span>
                 </button>
             </div>
         </div>
@@ -494,6 +522,9 @@
     <button data-feature="file-sharing" style="display: none;">File Sharing</button>
     <button data-feature="voice-messages" style="display: none;">Voice Messages</button>
 
+    <!-- UI Elements Fixer -->
+    <script src="fix-ui-elements.js"></script>
+    
     <!-- Main application entry point -->
     <script type="module" src="/src/main.js"></script>
 </body>

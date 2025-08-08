@@ -76,6 +76,7 @@
         .splash-logo::before {
             content: '🔐';
             display: block;
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji", "Android Emoji", "EmojiSymbols", sans-serif;
         }
         
         .splash-logo img {
@@ -142,6 +143,7 @@
         
         .user-avatar::before {
             content: '👤';
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji", "Android Emoji", "EmojiSymbols", sans-serif;
         }
         
         .user-avatar img {
@@ -259,6 +261,7 @@
         
         .chat-avatar::before {
             content: '💬';
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji", "Android Emoji", "EmojiSymbols", sans-serif;
         }
         
         .chat-avatar img {
@@ -340,6 +343,7 @@
         
         .contact-avatar::before {
             content: '👤';
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji", "Android Emoji", "EmojiSymbols", sans-serif;
         }
         
         .contact-avatar img {
@@ -995,7 +999,7 @@
     <!-- Splash Screen -->
     <div class="splash-screen" id="splash-screen">
         <div class="splash-logo">
-            <img src="../cipherwave.png" alt="CipherWave Logo" onerror="this.style.display='none'">
+            <img src="./cipherwave.png" alt="CipherWave Logo" onerror="this.style.display='none'">
         </div>
         <h1 class="splash-title">CipherWave</h1>
         <p class="splash-subtitle">Secure, Decentralized Messaging</p>
@@ -1008,7 +1012,7 @@
             <div class="sidebar-header">
                 <div class="user-info">
                     <div class="user-avatar">
-                        <img src="../cipherwave.png" alt="User" onerror="this.style.display='none'">
+                        <img src="./cipherwave.png" alt="User" onerror="this.style.display='none'">
                     </div>
                     <div class="user-name">Anonymous User</div>
                 </div>
@@ -1032,7 +1036,7 @@
             <div class="chat-header">
                 <div class="contact-info">
                     <div class="contact-avatar">
-                        <img src="../cipherwave.png" alt="Peer" onerror="this.style.display='none'">
+                        <img src="./cipherwave.png" alt="Peer" onerror="this.style.display='none'">
                     </div>
                     <div>
                         <div class="contact-name">Peer Connection</div>
@@ -1043,7 +1047,7 @@
             
             <div class="messages-container" id="messages-container">
                 <div class="welcome-message">
-                    <div class="welcome-icon">🔐</div>
+                    <div class="welcome-icon" style="font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji', 'Android Emoji', 'EmojiSymbols', sans-serif;">🔐</div>
                     <div class="welcome-text">
                         <h3>End-to-End Encrypted</h3>
                         <p>Your messages are secured with military-grade encryption. Only you and your peer can read them.</p>
@@ -1095,6 +1099,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="../fix-ui-elements.js"></script>
     <script src="enhanced-security.js"></script>
     <script src="script.js"></script>
     <script src="optimize-cipherwave.js"></script>
