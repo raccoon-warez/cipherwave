@@ -2,1710 +2,618 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CipherWave - Secure P2P Messenger</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    
+    <!-- Fonts and Icons with fallbacks -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Critical CSS for immediate render -->
     <style>
-        /* Telegram-like UI Styles */
+        /* Critical CSS for above-the-fold content */
         :root {
-            --tg-primary: #5682a3;
-            --tg-primary-dark: #4a7290;
-            --tg-background: #ffffff;
-            --tg-sidebar: #f0f4f8;
-            --tg-chat-bg: #e3f2fd;
-            --tg-message-received: #f0f4f8;
-            --tg-message-sent: #e3f2fd;
-            --tg-text-primary: #212121;
-            --tg-text-secondary: #757575;
-            --tg-border: #e0e0e0;
-            --tg-online: #4caf50;
-            --tg-away: #ff9800;
-            --tg-offline: #9e9e9e;
+            --primary: #5682a3;
+            --primary-dark: #4a7290;
+            --primary-light: #6b9bc1;
+            --background: #ffffff;
+            --sidebar: #f8fafc;
+            --chat-bg: #f1f5f9;
+            --message-received: #e2e8f0;
+            --message-sent: #dbeafe;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            font-size: 16px;
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         body {
-            background: var(--tg-background);
-            color: var(--tg-text-primary);
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
             margin: 0;
             min-height: 100vh;
+            min-height: 100dvh;
             overflow-x: hidden;
         }
 
-        .tg-app {
+        .app-container {
             display: flex;
             height: 100vh;
-            max-width: 100%;
+            height: 100dvh;
+            max-width: 1200px;
             margin: 0 auto;
-            background: var(--tg-background);
+            background: var(--background);
+            box-shadow: var(--shadow-lg);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
         }
 
-        /* Splash Screen */
+        /* Splash screen */
         .splash-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: var(--tg-primary);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            animation: fadeIn 0.5s ease-out;
+            color: white;
         }
 
         .splash-logo {
-            width: 120px;
-            height: 120px;
-            margin-bottom: 24px;
+            font-size: 4rem;
+            margin-bottom: 1rem;
             animation: pulse 2s infinite;
-            object-fit: cover;
-            border-radius: 50%;
-            background: var(--tg-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 3rem;
-        }
-        
-        .splash-logo::before {
-            content: '🔐';
-            display: block;
-            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji", "Android Emoji", "EmojiSymbols", sans-serif;
-        }
-        
-        .splash-logo img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
         }
 
         .splash-title {
-            color: white;
             font-size: 2.5rem;
             font-weight: 700;
-            margin-bottom: 12px;
+            margin-bottom: 0.5rem;
         }
 
         .splash-subtitle {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 1.2rem;
-            font-weight: 500;
-        }
-
-        /* Sidebar */
-        .tg-sidebar {
-            width: 300px;
-            background: var(--tg-sidebar);
-            border-right: 1px solid var(--tg-border);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .sidebar-header {
-            padding: 16px;
-            background: var(--tg-primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 12px;
-            object-fit: cover;
-            background: var(--tg-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.2rem;
-            position: relative;
-        }
-        
-        .user-avatar::before {
-            content: '👤';
-            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji", "Android Emoji", "EmojiSymbols", sans-serif;
-        }
-        
-        .user-avatar img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-
-        .user-name {
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .sidebar-actions {
-            display: flex;
-            gap: 16px;
-        }
-
-        .action-btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-
-        .action-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-
-        .connection-status-area {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .connection-indicator {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            border-radius: 20px;
-            background: var(--tg-message-received);
-            border: 1px solid var(--tg-border);
-        }
-
-        .connection-indicator.connected {
-            background: rgba(76, 175, 80, 0.1);
-            border-color: var(--tg-online);
-        }
-
-        .connection-indicator.connecting {
-            background: rgba(255, 152, 0, 0.1);
-            border-color: var(--tg-away);
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--tg-offline);
-        }
-
-        .connection-indicator.connected .status-dot {
-            background: var(--tg-online);
-        }
-
-        .connection-indicator.connecting .status-dot {
-            background: var(--tg-away);
-            animation: pulse 1.5s infinite;
-        }
-
-        .status-text {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--tg-text-secondary);
-        }
-
-        .connection-indicator.connected .status-text {
-            color: var(--tg-online);
-        }
-
-        .connection-indicator.connecting .status-text {
-            color: var(--tg-away);
-        }
-
-        .chat-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            margin-right: 12px;
-            object-fit: cover;
-            background: var(--tg-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.5rem;
-            position: relative;
-        }
-        
-        .chat-avatar::before {
-            content: '💬';
-            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji", "Android Emoji", "EmojiSymbols", sans-serif;
-        }
-        
-        .chat-avatar img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-
-        .chat-info {
-            flex: 1;
-            overflow: hidden;
-        }
-
-
-        .new-chat-btn {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: var(--tg-primary);
-            color: white;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s, transform 0.2s;
-        }
-
-        .new-chat-btn:hover {
-            background: var(--tg-primary-dark);
-            transform: scale(1.05);
-        }
-
-        /* Main Chat Area */
-        .tg-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .chat-header {
-            padding: 12px 16px;
-            background: white;
-            border-bottom: 1px solid var(--tg-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .contact-info {
-            display: flex;
-            align-items: center;
-        }
-
-        .contact-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 12px;
-            object-fit: cover;
-            background: var(--tg-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.2rem;
-            position: relative;
-        }
-        
-        .contact-avatar::before {
-            content: '👤';
-            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji", "Android Emoji", "EmojiSymbols", sans-serif;
-        }
-        
-        .contact-avatar img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-
-        .contact-name {
-            font-weight: 600;
             font-size: 1.1rem;
-        }
-
-        .contact-status {
-            font-size: 0.8rem;
-            color: var(--tg-online);
-            display: flex;
-            align-items: center;
-        }
-
-        .contact-status::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--tg-online);
-            margin-right: 6px;
-        }
-
-        .chat-actions {
-            display: flex;
-            gap: 16px;
-        }
-
-
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            background: var(--tg-chat-bg);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .welcome-message {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 40px 20px;
-            height: 100%;
-            color: var(--tg-text-secondary);
-        }
-
-        .welcome-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.8;
-        }
-
-        .welcome-text h3 {
-            color: var(--tg-text-primary);
-            margin-bottom: 10px;
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-
-        .welcome-text p {
-            font-size: 1rem;
-            line-height: 1.5;
-            max-width: 300px;
-        }
-
-        .message {
-            max-width: 70%;
-            padding: 10px 14px;
-            margin-bottom: 12px;
-            border-radius: 18px;
-            position: relative;
-            word-wrap: break-word;
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        .message.received {
-            background: var(--tg-message-received);
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-
-        .message.sent {
-            background: var(--tg-message-sent);
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
-
-        .message-content {
-            font-size: 0.95rem;
-            line-height: 1.4;
-        }
-
-        .message-time {
-            font-size: 0.7rem;
-            color: var(--tg-text-secondary);
-            text-align: right;
-            margin-top: 4px;
-        }
-
-        .input-area {
-            padding: 12px 16px;
-            background: white;
-            border-top: 1px solid var(--tg-border);
-            display: flex;
-            align-items: flex-end;
-            gap: 12px;
-        }
-
-
-        .message-input {
-            flex: 1;
-            padding: 12px 16px;
-            border-radius: 24px;
-            border: 1px solid var(--tg-border);
-            font-size: 1rem;
-            outline: none;
-            resize: none;
-            max-height: 120px;
-            overflow-y: auto;
-        }
-
-        .message-input:focus {
-            border-color: var(--tg-primary);
-        }
-
-        .send-btn {
-            background: var(--tg-primary);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-            flex-shrink: 0;
-        }
-
-        .send-btn:hover {
-            background: var(--tg-primary-dark);
-        }
-
-        .send-btn:disabled {
-            background: var(--tg-text-secondary);
-            cursor: not-allowed;
-        }
-
-        /* Connection Modal */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
-        }
-
-        .modal.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            transform: translateY(20px);
-            transition: transform 0.3s;
-        }
-
-        .modal.active .modal-content {
-            transform: translateY(0);
-        }
-
-        .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--tg-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .modal-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-
-        .close-btn:hover {
-            background: rgba(0, 0, 0, 0.05);
-        }
-
-        .modal-body {
-            padding: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: 1px solid var(--tg-border);
-            font-size: 1rem;
-            outline: none;
-        }
-
-        .form-control:focus {
-            border-color: var(--tg-primary);
-        }
-
-
-        .btn {
-            padding: 12px 20px;
-            border-radius: 8px;
-            border: none;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-primary {
-            background: var(--tg-primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--tg-primary-dark);
-        }
-
-        .btn-block {
-            width: 100%;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-
-        .status-online {
-            background: var(--tg-online);
-        }
-
-        .status-away {
-            background: var(--tg-away);
-        }
-
-        .status-offline {
-            background: var(--tg-offline);
+            opacity: 0.9;
         }
 
         .hidden {
-            display: none;
-        }
-
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            display: none !important;
         }
 
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
         }
 
-        /* Enhanced Mobile-First Responsive Design */
-        @media (max-width: 1024px) {
-            .tg-sidebar {
-                width: 280px;
-            }
+        /* Font Awesome emoji fallbacks */
+        .fa-lock:before, .fas.fa-lock:before { 
+            content: "🔐"; 
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important; 
         }
-
-        @media (max-width: 768px) {
-            .tg-app {
-                height: 100vh;
-                height: 100dvh; /* Dynamic viewport height */
-            }
-            
-            .tg-sidebar {
-                width: 100%;
-                height: auto;
-                max-height: 70px;
-                border-right: none;
-                border-bottom: 1px solid var(--tg-border);
-                flex-direction: row;
-                overflow-x: auto;
-                overflow-y: hidden;
-                position: relative;
-                z-index: 100;
-            }
-            
-            .tg-sidebar.mobile-expanded {
-                max-height: 350px;
-                flex-direction: column;
-                overflow-y: auto;
-                overflow-x: hidden;
-                background: var(--tg-sidebar);
-            }
-            
-            .sidebar-header {
-                min-width: 200px;
-                border-bottom: none;
-                border-right: 1px solid var(--tg-border);
-                flex-shrink: 0;
-            }
-            
-            .tg-sidebar.mobile-expanded .sidebar-header {
-                min-width: auto;
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid var(--tg-border);
-            }
-            
-            .user-name {
-                display: block;
-                font-size: 0.9rem;
-            }
-            
-            .sidebar-actions {
-                display: flex;
-                gap: 8px;
-            }
-            
-            
-            
-            .chat-avatar {
-                width: 40px;
-                height: 40px;
-                margin-right: 0;
-                margin-bottom: 4px;
-            }
-            
-            .tg-sidebar.mobile-expanded .chat-avatar {
-                width: 50px;
-                height: 50px;
-                margin-right: 12px;
-                margin-bottom: 0;
-            }
-            
-            .chat-info {
-                display: none;
-            }
-            
-            .tg-sidebar.mobile-expanded .chat-info {
-                display: block;
-            }
-            
-            
-            .tg-main {
-                flex: 1;
-                min-height: 0;
-            }
-            
-            /* Enhanced message display */
-            .message {
-                max-width: 85%;
-                margin-bottom: 8px;
-                padding: 8px 12px;
-            }
-            
-            .message-content {
-                font-size: 0.9rem;
-            }
-            
-            .message-time {
-                font-size: 0.65rem;
-            }
-            
-            /* Better input area */
-            .input-area {
-                padding: 8px 12px;
-                padding-bottom: calc(8px + env(safe-area-inset-bottom));
-            }
-            
-            .message-input {
-                font-size: 16px; /* Prevents zoom on iOS */
-                padding: 10px 14px;
-                min-height: 40px;
-            }
-            
-            .send-btn {
-                min-width: 40px;
-                min-height: 40px;
-            }
-            
-            /* Enhanced touch targets */
-            .action-btn,
-            .close-btn {
-                min-width: 44px;
-                min-height: 44px;
-                font-size: 1.1rem;
-            }
-            
-            /* Modal improvements */
-            .modal-content {
-                width: 95vw;
-                max-height: 90vh;
-                max-height: 90dvh;
-                margin: auto;
-            }
-            
-            .form-control,
-            .modal-input {
-                font-size: 16px; /* Prevents zoom on iOS */
-                min-height: 44px;
-            }
-            
-            .btn {
-                min-height: 48px;
-                font-size: 1rem;
-            }
+        .fa-paper-plane:before, .fas.fa-paper-plane:before { 
+            content: "📤"; 
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important; 
         }
-
-        @media (max-width: 480px) {
-            .tg-app {
-                flex-direction: column;
-            }
-            
-            .tg-sidebar {
-                height: auto;
-                max-height: 60px;
-            }
-            
-            .tg-sidebar.mobile-expanded {
-                max-height: 300px;
-            }
-            
-            .sidebar-header {
-                padding: 8px 12px;
-                min-width: 160px;
-            }
-            
-            .user-avatar {
-                width: 32px;
-                height: 32px;
-            }
-            
-            .user-name {
-                font-size: 0.8rem;
-            }
-            
-            .logo-title {
-                font-size: 2rem;
-            }
-            
-            .logo-desc {
-                font-size: 1rem;
-            }
-            
-            .chat-header {
-                padding: 8px 12px;
-            }
-            
-            .contact-avatar {
-                width: 32px;
-                height: 32px;
-            }
-            
-            .contact-name {
-                font-size: 1rem;
-            }
-            
-            .contact-status {
-                font-size: 0.7rem;
-            }
-            
-            .messages-container {
-                padding: 8px 12px;
-                padding-bottom: calc(12px + env(safe-area-inset-bottom));
-            }
-            
-            .message {
-                max-width: 90%;
-                padding: 6px 10px;
-            }
-            
-            .message-content {
-                font-size: 0.85rem;
-            }
-            
-            .input-area {
-                padding: 6px 8px;
-                padding-bottom: calc(6px + env(safe-area-inset-bottom));
-            }
-            
-            .new-chat-btn {
-                width: 48px;
-                height: 48px;
-                bottom: 16px;
-                right: 16px;
-            }
+        .fa-plus:before, .fas.fa-plus:before { 
+            content: "➕"; 
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important; 
         }
-
-        @media (max-width: 360px) {
-            .sidebar-header {
-                min-width: 140px;
-                padding: 6px 8px;
-            }
-            
-            .user-name {
-                display: none;
-            }
-            
-            .sidebar-actions {
-                gap: 4px;
-            }
-            
-            .action-btn {
-                min-width: 36px;
-                min-height: 36px;
-                font-size: 1rem;
-            }
-            
-            .message {
-                max-width: 95%;
-            }
+        .fa-times:before, .fas.fa-times:before { 
+            content: "❌"; 
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important; 
         }
-
-        /* Enhanced touch interactions */
-        @media (hover: none) and (pointer: coarse) {
-            .action-btn:hover,
-            .btn:hover {
-                background: rgba(0, 0, 0, 0.1);
-                transform: none;
-            }
-            
-            .action-btn:active {
-                transform: scale(0.95);
-                background: rgba(0, 0, 0, 0.15);
-            }
-            
-            .btn:active {
-                transform: scale(0.98);
-            }
-            
-            .send-btn:active {
-                transform: scale(0.95);
-            }
+        .fa-dice:before, .fas.fa-dice:before { 
+            content: "🎲"; 
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important; 
         }
-
-        /* Landscape mobile handling */
-        @media (max-width: 896px) and (orientation: landscape) and (max-height: 500px) {
-            .tg-app {
-                flex-direction: row;
-            }
-            
-            .tg-sidebar {
-                width: 240px;
-                height: 100vh;
-                max-height: none;
-                flex-direction: column;
-                border-right: 1px solid var(--tg-border);
-                border-bottom: none;
-            }
-            
-            .sidebar-header {
-                border-bottom: 1px solid var(--tg-border);
-                border-right: none;
-                min-width: auto;
-            }
-            
-            
-            .chat-avatar {
-                width: 50px;
-                height: 50px;
-                margin-right: 12px;
-                margin-bottom: 0;
-            }
-            
-            .chat-info,
+        .fa-plug:before, .fas.fa-plug:before { 
+            content: "🔌"; 
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important; 
         }
-
-        /* Safe area handling for notched devices */
-        @supports (padding: max(0px)) {
-            .tg-app {
-                padding-left: env(safe-area-inset-left);
-                padding-right: env(safe-area-inset-right);
-            }
-            
-            .sidebar-header,
-            .chat-header {
-                padding-top: max(12px, env(safe-area-inset-top));
-            }
-            
-            .input-area {
-                padding-bottom: max(12px, env(safe-area-inset-bottom));
-            }
-            
-            .modal-content {
-                margin-top: max(20px, env(safe-area-inset-top));
-                margin-bottom: max(20px, env(safe-area-inset-bottom));
-            }
+        .fa-user:before, .fas.fa-user:before { 
+            content: "👤"; 
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important; 
+        }
+        .fa-cog:before, .fas.fa-cog:before { 
+            content: "⚙️"; 
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important; 
         }
     </style>
+
+    <!-- Link to external stylesheet for non-critical CSS -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- PWA manifest -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#5682a3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="cipherwave.png" as="image">
 </head>
 <body>
     <!-- Splash Screen -->
     <div class="splash-screen" id="splash-screen">
-        <div class="splash-logo">
-            <img src="./cipherwave.png" alt="CipherWave Logo" onerror="this.style.display='none'">
-        </div>
+        <div class="splash-logo">🔐</div>
         <h1 class="splash-title">CipherWave</h1>
-        <p class="splash-subtitle">Secure, Decentralized Messaging</p>
+        <p class="splash-subtitle">Secure, Private Messaging</p>
     </div>
 
     <!-- Main App -->
-    <div class="tg-app hidden" id="tg-app">
+    <div class="app-container hidden" id="app-container">
         <!-- Sidebar -->
-        <div class="tg-sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="user-info">
                     <div class="user-avatar">
-                        <img src="./cipherwave.png" alt="User" onerror="this.style.display='none'">
+                        <img src="./cipherwave.png" alt="User Avatar" onerror="this.style.display='none'; this.parentElement.classList.add('avatar-fallback');">
+                        <span class="avatar-emoji">👤</span>
                     </div>
-                    <div class="user-name">Anonymous User</div>
+                    <div class="user-details">
+                        <div class="user-name">Anonymous User</div>
+                        <div class="user-status">Offline</div>
+                    </div>
                 </div>
                 <div class="sidebar-actions">
-                    <button class="action-btn" id="new-chat-trigger">
+                    <button class="action-btn" id="new-chat-btn" title="New Chat">
                         <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="action-btn" id="settings-btn" title="Settings">
+                        <i class="fas fa-cog"></i>
                     </button>
                 </div>
             </div>
             
-            <div class="connection-status-area">
-                <div class="connection-indicator disconnected" id="connection-indicator">
+            <div class="connection-status">
+                <div class="connection-indicator" id="connection-indicator">
                     <div class="status-dot"></div>
                     <span class="status-text">Disconnected</span>
                 </div>
             </div>
+
+            <div class="chat-list-container">
+                <div class="chat-list" id="chat-list">
+                    <!-- Chat items will be added here -->
+                </div>
+            </div>
         </div>
-        
+
         <!-- Main Chat Area -->
-        <div class="tg-main">
-            <div class="chat-header">
-                <div class="contact-info">
-                    <div class="contact-avatar">
-                        <img src="./cipherwave.png" alt="Peer" onerror="this.style.display='none'">
-                    </div>
-                    <div>
-                        <div class="contact-name">Peer Connection</div>
-                        <div class="contact-status" id="peer-status">Online</div>
-                    </div>
+        <div class="main-content" id="main-content">
+            <!-- Welcome Screen -->
+            <div class="welcome-screen" id="welcome-screen">
+                <div class="welcome-content">
+                    <div class="welcome-icon">🔐</div>
+                    <h2>Welcome to CipherWave</h2>
+                    <p>Start a secure, encrypted conversation by connecting to a chat room.</p>
+                    <button class="primary-btn" id="start-chat-btn">Start New Chat</button>
                 </div>
             </div>
-            
-            <div class="messages-container" id="messages-container">
-                <div class="welcome-message">
-                    <div class="welcome-icon" style="font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji', 'Android Emoji', 'EmojiSymbols', sans-serif;">🔐</div>
-                    <div class="welcome-text">
-                        <h3>End-to-End Encrypted</h3>
-                        <p>Your messages are secured with military-grade encryption. Only you and your peer can read them.</p>
+
+            <!-- Chat Interface -->
+            <div class="chat-interface hidden" id="chat-interface">
+                <div class="chat-header">
+                    <div class="contact-info">
+                        <div class="contact-avatar">
+                            <img src="./cipherwave.png" alt="Contact Avatar" onerror="this.style.display='none'; this.parentElement.classList.add('avatar-fallback');">
+                            <span class="avatar-emoji">💬</span>
+                        </div>
+                        <div class="contact-details">
+                            <div class="contact-name">Secure Chat</div>
+                            <div class="contact-status" id="contact-status">Connecting...</div>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="action-btn" title="Voice Call">
+                            <i class="fas fa-phone"></i>
+                        </button>
+                        <button class="action-btn" title="Video Call">
+                            <i class="fas fa-video"></i>
+                        </button>
                     </div>
                 </div>
-            </div>
-            
-            <div class="input-area">
-                <textarea class="message-input" id="message-input" placeholder="Type a message..."></textarea>
-                <button class="send-btn" id="send-btn">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+
+                <div class="messages-container" id="messages-container">
+                    <div class="encryption-notice">
+                        <div class="notice-icon">🔐</div>
+                        <p>Messages are end-to-end encrypted. Only you and your peer can read them.</p>
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <button class="attachment-btn" title="Attach File">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <div class="message-input-wrapper">
+                        <textarea 
+                            class="message-input" 
+                            id="message-input" 
+                            placeholder="Type a message..."
+                            rows="1"
+                        ></textarea>
+                    </div>
+                    <button class="send-btn" id="send-btn" disabled title="Send Message">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
             </div>
         </div>
-        
     </div>
 
     <!-- Connection Modal -->
-    <div class="modal" id="connection-modal">
-        <div class="modal-content">
+    <div class="modal-overlay" id="connection-modal">
+        <div class="modal">
             <div class="modal-header">
-                <h2 class="modal-title">Join Network</h2>
-                <button class="close-btn" id="close-modal">
+                <h2>Join Secure Chat</h2>
+                <button class="close-btn" id="close-modal" title="Close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Nickname</label>
-                    <input type="text" class="form-control" id="nickname" placeholder="Enter your nickname" value="Anonymous User">
+                    <label for="nickname">Your Nickname</label>
+                    <input type="text" id="nickname" placeholder="Enter your nickname" value="Anonymous User" maxlength="30">
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Room ID</label>
+                    <label for="room-id">Room ID</label>
                     <div class="input-group">
-                        <input type="text" class="form-control" id="room-id" placeholder="Enter or generate room ID">
-                        <button class="btn btn-primary" id="generate-room" style="margin-top: 10px;">
+                        <input type="text" id="room-id" placeholder="Enter room ID" maxlength="50">
+                        <button type="button" class="secondary-btn" id="generate-room">
                             <i class="fas fa-dice"></i> Generate
                         </button>
                     </div>
                 </div>
-                
-                
-                <button class="btn btn-primary btn-block" id="connect-btn">
-                    <i class="fas fa-plug"></i> Connect
+
+                <div class="form-group">
+                    <label for="encryption-method">Encryption Method</label>
+                    <select id="encryption-method">
+                        <option value="aes-256">AES-256 (Recommended)</option>
+                        <option value="chacha20">ChaCha20-Poly1305</option>
+                    </select>
+                </div>
+
+                <button type="button" class="primary-btn full-width" id="connect-btn">
+                    <i class="fas fa-plug"></i> Connect Securely
                 </button>
             </div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script src="../fix-ui-elements.js"></script>
-    <script src="enhanced-security.js"></script>
-    <script src="script.js"></script>
-    <script src="optimize-cipherwave.js"></script>
-    <script src="bugfix-connection.js"></script>
-    
-    <!-- Advanced Features -->
-    <script src="advanced-features.js"></script>
-    <script src="adaptive-theme.js"></script>
-    <script src="pwa-manager.js"></script>
-    <script src="voice-manager.js"></script>
-    <script src="realtime-manager.js"></script>
-    <script src="file-manager.js"></script>
-    <script src="thread-manager.js"></script>
-    <script src="security-manager.js"></script>
-    <script>
-        // Initialize CipherWave Advanced Features
-        let cipherWaveAdvanced = null;
-        
-        // Enhanced Telegram-like UI JavaScript with Comprehensive Mobile Support
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Initialize advanced features first
-            try {
-                cipherWaveAdvanced = new CipherWaveAdvanced();
-                window.cipherWaveAdvanced = cipherWaveAdvanced;
-                console.log('🚀 CipherWave Advanced Features initialized');
-            } catch (error) {
-                console.error('❌ Failed to initialize advanced features:', error);
-            }
-            
-            const sidebar = document.querySelector('.tg-sidebar');
-            const messageInput = document.getElementById('message-input');
-            const messagesContainer = document.getElementById('messages-container');
-            const app = document.getElementById('tg-app');
-            const inputArea = document.querySelector('.input-area');
-            
-            let isMobile = window.innerWidth <= 768;
-            let sidebarExpanded = false;
-            let isKeyboardOpen = false;
-            let originalViewportHeight = window.innerHeight;
-            let resizeTimeout;
+    <!-- Loading overlay for connection -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Establishing secure connection...</p>
+        </div>
+    </div>
 
-            // Hide splash screen after 2 seconds with improved transition
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="fix-ui-elements.js"></script>
+    <script src="script.js"></script>
+
+    <!-- Application initialization -->
+    <script>
+        // Enhanced UI initialization with better error handling
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 CipherWave initializing...');
+            
+            // Initialize UI elements
+            initializeUI();
+            
+            // Hide splash screen after initialization
             setTimeout(() => {
-                const splashScreen = document.getElementById('splash-screen');
+                hideSplashScreen();
+            }, 2000);
+        });
+
+        function initializeUI() {
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Initialize responsive behavior
+            initializeResponsive();
+            
+            // Set up message input auto-resize
+            setupMessageInput();
+            
+            console.log('✅ UI initialized successfully');
+        }
+
+        function setupEventListeners() {
+            // Modal controls
+            const newChatBtn = document.getElementById('new-chat-btn');
+            const startChatBtn = document.getElementById('start-chat-btn');
+            const closeModal = document.getElementById('close-modal');
+            const connectBtn = document.getElementById('connect-btn');
+            const generateRoomBtn = document.getElementById('generate-room');
+
+            if (newChatBtn) newChatBtn.addEventListener('click', showConnectionModal);
+            if (startChatBtn) startChatBtn.addEventListener('click', showConnectionModal);
+            if (closeModal) closeModal.addEventListener('click', hideConnectionModal);
+            if (connectBtn) connectBtn.addEventListener('click', handleConnect);
+            if (generateRoomBtn) generateRoomBtn.addEventListener('click', generateRoomId);
+
+            // Message sending
+            const sendBtn = document.getElementById('send-btn');
+            const messageInput = document.getElementById('message-input');
+            
+            if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+            if (messageInput) {
+                messageInput.addEventListener('keydown', handleMessageInputKeydown);
+                messageInput.addEventListener('input', handleMessageInputChange);
+            }
+        }
+
+        function initializeResponsive() {
+            // Handle mobile sidebar toggle
+            if (window.innerWidth <= 768) {
+                document.body.classList.add('mobile');
+            }
+
+            window.addEventListener('resize', function() {
+                if (window.innerWidth <= 768) {
+                    document.body.classList.add('mobile');
+                } else {
+                    document.body.classList.remove('mobile');
+                }
+            });
+        }
+
+        function setupMessageInput() {
+            const messageInput = document.getElementById('message-input');
+            if (!messageInput) return;
+
+            messageInput.addEventListener('input', function() {
+                // Auto-resize textarea
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+                
+                // Enable/disable send button
+                const sendBtn = document.getElementById('send-btn');
+                if (sendBtn) {
+                    sendBtn.disabled = this.value.trim().length === 0;
+                }
+            });
+        }
+
+        function hideSplashScreen() {
+            const splashScreen = document.getElementById('splash-screen');
+            const appContainer = document.getElementById('app-container');
+            
+            if (splashScreen && appContainer) {
                 splashScreen.style.opacity = '0';
-                splashScreen.style.transform = 'scale(0.95)';
+                splashScreen.style.transform = 'scale(0.9)';
                 
                 setTimeout(() => {
                     splashScreen.style.display = 'none';
-                    document.getElementById('tg-app').classList.remove('hidden');
-                    document.getElementById('tg-app').style.opacity = '0';
-                    document.getElementById('tg-app').style.transform = 'translateY(20px)';
+                    appContainer.classList.remove('hidden');
+                    appContainer.style.opacity = '0';
+                    appContainer.style.transform = 'translateY(20px)';
                     
                     // Animate app entrance
                     requestAnimationFrame(() => {
-                        document.getElementById('tg-app').style.transition = 'all 0.3s ease-out';
-                        document.getElementById('tg-app').style.opacity = '1';
-                        document.getElementById('tg-app').style.transform = 'translateY(0)';
+                        appContainer.style.transition = 'all 0.4s ease-out';
+                        appContainer.style.opacity = '1';
+                        appContainer.style.transform = 'translateY(0)';
                     });
                 }, 300);
-            }, 2000);
-
-            // Enhanced mobile detection with orientation handling
-            function updateMobileState() {
-                const newIsMobile = window.innerWidth <= 768;
-                const orientationChanged = isMobile !== newIsMobile;
-                isMobile = newIsMobile;
-                
-                if (!isMobile && sidebar) {
-                    sidebar.classList.remove('mobile-expanded');
-                    sidebarExpanded = false;
-                }
-                
-                // Update CSS custom properties for dynamic sizing
-                document.documentElement.style.setProperty('--actual-vh', `${window.innerHeight * 0.01}px`);
-                
-                if (orientationChanged) {
-                    // Reset keyboard state on orientation change
-                    isKeyboardOpen = false;
-                    app.classList.remove('mobile-keyboard-open');
-                    originalViewportHeight = window.innerHeight;
-                }
             }
+        }
 
-            // Enhanced sidebar toggle with haptic feedback
-            function toggleSidebar() {
-                if (isMobile && sidebar) {
-                    sidebarExpanded = !sidebarExpanded;
-                    
-                    // Add haptic feedback if available
-                    if (navigator.vibrate) {
-                        navigator.vibrate(50);
-                    }
-                    
-                    if (sidebarExpanded) {
-                        sidebar.classList.add('mobile-expanded');
-                        // Add accessibility announcement
-                        announceToScreenReader('Navigation menu expanded');
-                    } else {
-                        sidebar.classList.remove('mobile-expanded');
-                        announceToScreenReader('Navigation menu collapsed');
-                    }
-                }
-            }
-
-            // Accessibility announcements
-            function announceToScreenReader(message) {
-                const announcement = document.createElement('div');
-                announcement.setAttribute('aria-live', 'polite');
-                announcement.setAttribute('aria-atomic', 'true');
-                announcement.className = 'visually-hidden';
-                announcement.textContent = message;
-                document.body.appendChild(announcement);
-                
-                setTimeout(() => {
-                    document.body.removeChild(announcement);
-                }, 1000);
-            }
-
-            // Enhanced mobile keyboard detection
-            function detectKeyboard() {
-                const currentHeight = window.innerHeight;
-                const heightDifference = originalViewportHeight - currentHeight;
-                const keyboardThreshold = isMobile ? 150 : 300;
-                
-                if (heightDifference > keyboardThreshold && !isKeyboardOpen) {
-                    isKeyboardOpen = true;
-                    app.classList.add('mobile-keyboard-open');
-                    
-                    // Scroll to bottom when keyboard opens
-                    setTimeout(() => {
-                        if (messagesContainer) {
-                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                        }
-                    }, 100);
-                } else if (heightDifference <= keyboardThreshold && isKeyboardOpen) {
-                    isKeyboardOpen = false;
-                    app.classList.remove('mobile-keyboard-open');
-                }
-            }
-
-            // Enhanced touch gesture handling
-            let touchStartY = 0;
-            let touchStartX = 0;
-            let isScrolling = false;
-
-            function handleTouchStart(e) {
-                if (e.touches.length === 1) {
-                    touchStartY = e.touches[0].clientY;
-                    touchStartX = e.touches[0].clientX;
-                    isScrolling = false;
-                }
-            }
-
-            function handleTouchMove(e) {
-                if (e.touches.length === 1 && !isScrolling) {
-                    const touchY = e.touches[0].clientY;
-                    const touchX = e.touches[0].clientX;
-                    const deltaY = touchY - touchStartY;
-                    const deltaX = touchX - touchStartX;
-                    
-                    // Determine scroll direction
-                    if (Math.abs(deltaY) > Math.abs(deltaX)) {
-                        isScrolling = true;
-                        
-                        // Prevent pull-to-refresh on overscroll
-                        if (window.pageYOffset === 0 && deltaY > 0) {
-                            e.preventDefault();
-                        }
-                    }
-                }
-            }
-
-            // Add mobile toggle functionality with improved event handling
-            function addSidebarToggleHandlers() {
-                const sidebarHeader = document.querySelector('.sidebar-header');
-                if (sidebarHeader) {
-                    // Remove existing listeners to prevent duplicates
-                    sidebarHeader.removeEventListener('click', handleSidebarToggle);
-                    sidebarHeader.addEventListener('click', handleSidebarToggle);
-                    
-                    // Add touch feedback
-                    sidebarHeader.addEventListener('touchstart', addTouchFeedback, { passive: true });
-                    sidebarHeader.addEventListener('touchend', removeTouchFeedback, { passive: true });
-                    sidebarHeader.addEventListener('touchcancel', removeTouchFeedback, { passive: true });
-                }
-            }
-
-            function handleSidebarToggle(e) {
-                if (isMobile) {
-                    e.preventDefault();
-                    toggleSidebar();
-                }
-            }
-
-            // Enhanced touch feedback system
-            function addTouchFeedback(e) {
-                const element = e.currentTarget;
-                element.classList.add('touch-feedback');
-            }
-
-            function removeTouchFeedback(e) {
-                const element = e.currentTarget;
-                setTimeout(() => {
-                    element.classList.remove('touch-feedback');
-                }, 150);
-            }
-
-            // Close sidebar when clicking outside on mobile with improved detection
-            function handleOutsideClick(e) {
-                if (isMobile && sidebarExpanded && sidebar && !sidebar.contains(e.target)) {
-                    sidebar.classList.remove('mobile-expanded');
-                    sidebarExpanded = false;
-                }
-            }
-
-            // Prevent body scroll when modal is open
-            function preventBodyScroll(prevent) {
-                if (prevent) {
-                    document.body.classList.add('no-scroll');
-                } else {
-                    document.body.classList.remove('no-scroll');
-                }
-            }
-            
-            // Enhanced modal functionality with mobile optimizations
+        function showConnectionModal() {
             const modal = document.getElementById('connection-modal');
-            const newChatTrigger = document.getElementById('new-chat-trigger');
-            const closeModal = document.getElementById('close-modal');
-            const connectBtn = document.getElementById('connect-btn');
-            
-            function openModal() {
-                modal.classList.add('active');
-                preventBodyScroll(true);
-                
-                // Focus management for accessibility
-                const firstFocusable = modal.querySelector('input, button, select, textarea');
-                if (firstFocusable) {
-                    setTimeout(() => firstFocusable.focus(), 100);
-                }
-                
-                announceToScreenReader('Connection dialog opened');
-            }
-
-            function closeModalFunc() {
-                modal.classList.remove('active');
-                preventBodyScroll(false);
-                announceToScreenReader('Connection dialog closed');
-            }
-            
-            if (newChatTrigger) newChatTrigger.addEventListener('click', openModal);
-            if (closeModal) closeModal.addEventListener('click', closeModalFunc);
-
-            // Enhanced modal interaction handling
             if (modal) {
-                // Close modal on background click
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        closeModalFunc();
-                    }
-                });
+                modal.classList.add('active');
+                document.body.classList.add('modal-open');
+                
+                // Focus first input
+                const nicknameInput = document.getElementById('nickname');
+                if (nicknameInput) {
+                    setTimeout(() => nicknameInput.focus(), 100);
+                }
+            }
+        }
 
-                // Close modal on Escape key
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape' && modal.classList.contains('active')) {
-                        closeModalFunc();
-                    }
-                });
+        function hideConnectionModal() {
+            const modal = document.getElementById('connection-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.classList.remove('modal-open');
+            }
+        }
+
+        function generateRoomId() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let roomId = '';
+            for (let i = 0; i < 16; i++) {
+                roomId += chars.charAt(Math.floor(Math.random() * chars.length));
             }
             
-            
-            // Enhanced room ID generation
-            const generateRoomBtn = document.getElementById('generate-room');
             const roomIdInput = document.getElementById('room-id');
-            
-            if (generateRoomBtn && roomIdInput) {
-                generateRoomBtn.addEventListener('click', () => {
-                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-                    let roomId = '';
-                    for (let i = 0; i < 20; i++) {
-                        roomId += chars.charAt(Math.floor(Math.random() * chars.length));
-                    }
-                    roomIdInput.value = roomId;
-                    announceToScreenReader('New room ID generated');
+            if (roomIdInput) {
+                roomIdInput.value = roomId;
+                
+                // Visual feedback
+                const generateBtn = document.getElementById('generate-room');
+                if (generateBtn) {
+                    const originalText = generateBtn.innerHTML;
+                    generateBtn.innerHTML = '<i class="fas fa-check"></i> Generated';
+                    generateBtn.disabled = true;
                     
-                    // Add visual feedback
-                    generateRoomBtn.style.transform = 'scale(0.95)';
                     setTimeout(() => {
-                        generateRoomBtn.style.transform = '';
-                    }, 150);
-                });
+                        generateBtn.innerHTML = originalText;
+                        generateBtn.disabled = false;
+                    }, 1500);
+                }
+            }
+        }
+
+        function handleConnect() {
+            const roomId = document.getElementById('room-id')?.value?.trim();
+            const nickname = document.getElementById('nickname')?.value?.trim();
+            
+            if (!roomId) {
+                alert('Please enter a room ID');
+                return;
             }
             
-            // Enhanced message sending functionality
+            if (!nickname) {
+                alert('Please enter a nickname');
+                return;
+            }
+            
+            // Show loading state
+            showLoadingOverlay();
+            hideConnectionModal();
+            
+            // Simulate connection process (replace with actual WebRTC logic)
+            setTimeout(() => {
+                hideLoadingOverlay();
+                showChatInterface();
+                updateConnectionStatus('connected', 'Connected');
+            }, 3000);
+        }
+
+        function showLoadingOverlay() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.classList.remove('hidden');
+            }
+        }
+
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        function showChatInterface() {
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const chatInterface = document.getElementById('chat-interface');
+            
+            if (welcomeScreen && chatInterface) {
+                welcomeScreen.classList.add('hidden');
+                chatInterface.classList.remove('hidden');
+            }
+        }
+
+        function updateConnectionStatus(status, text) {
+            const indicator = document.getElementById('connection-indicator');
+            const contactStatus = document.getElementById('contact-status');
+            
+            if (indicator) {
+                indicator.className = `connection-indicator ${status}`;
+                const statusText = indicator.querySelector('.status-text');
+                if (statusText) statusText.textContent = text;
+            }
+            
+            if (contactStatus) {
+                contactStatus.textContent = status === 'connected' ? 'Online' : text;
+            }
+        }
+
+        function handleMessageInputKeydown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function handleMessageInputChange(event) {
             const sendBtn = document.getElementById('send-btn');
-            
-            function sendMessage() {
-                const message = messageInput.value.trim();
-                if (!message || message.length === 0) return;
-                
-                // Check if thread manager wants to handle this message
-                if (cipherWaveAdvanced?.threadManager?.handleMessageSend(message)) {
-                    messageInput.value = '';
-                    return;
-                }
-                
-                if (message && message.length > 0) {
-                    const now = new Date();
-                    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    
-                    const messageElement = document.createElement('div');
-                    messageElement.className = 'message sent';
-                    messageElement.setAttribute('role', 'article');
-                    messageElement.setAttribute('aria-label', `Sent message: ${message}`);
-                    messageElement.innerHTML = `
-                        <div class="message-content">${escapeHtml(message)}</div>
-                        <div class="message-time">${timeString}</div>
-                    `;
-                    
-                    messagesContainer.appendChild(messageElement);
-                    messageInput.value = '';
-                    
-                    // Smooth scroll to bottom with animation
-                    messagesContainer.scrollTo({
-                        top: messagesContainer.scrollHeight,
-                        behavior: 'smooth'
-                    });
-                    
-                    // Reset textarea height
-                    messageInput.style.height = 'auto';
-                    
-                    // Haptic feedback
-                    if (navigator.vibrate) {
-                        navigator.vibrate(30);
-                    }
-                    
-                    announceToScreenReader('Message sent');
-                }
-            }
-            
-            // HTML escaping for security
-            function escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-            
             if (sendBtn) {
-                sendBtn.addEventListener('click', sendMessage);
-                
-                // Enhanced send button feedback
-                sendBtn.addEventListener('touchstart', () => {
-                    sendBtn.style.transform = 'scale(0.9)';
-                }, { passive: true });
-                
-                sendBtn.addEventListener('touchend', () => {
-                    sendBtn.style.transform = '';
-                }, { passive: true });
+                sendBtn.disabled = event.target.value.trim().length === 0;
             }
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            if (!messageInput) return;
             
-            // Enhanced message input handling
-            if (messageInput) {
-                messageInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                        e.preventDefault();
-                        sendMessage();
-                    }
-                });
-                
-                // Auto-resize textarea with mobile optimization and performance
-                let resizeTimeout;
-                messageInput.addEventListener('input', function() {
-                    clearTimeout(resizeTimeout);
-                    resizeTimeout = setTimeout(() => {
-                        this.style.height = 'auto';
-                        const maxHeight = isMobile ? 120 : 160;
-                        this.style.height = Math.min(this.scrollHeight, maxHeight) + 'px';
-                    }, 10);
-                });
-
-                // Enhanced focus handling for mobile
-                messageInput.addEventListener('focus', function() {
-                    if (isMobile) {
-                        // Delay scroll to allow keyboard animation
-                        setTimeout(() => {
-                            detectKeyboard();
-                            if (messagesContainer) {
-                                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                            }
-                        }, 300);
-                    }
-                });
-
-                messageInput.addEventListener('blur', function() {
-                    if (isMobile) {
-                        setTimeout(() => {
-                            detectKeyboard();
-                        }, 300);
-                    }
-                });
-            }
-
-            // Enhanced event listeners setup
-            function setupEventListeners() {
-                // Window resize with debouncing
-                let resizeDebounce;
-                window.addEventListener('resize', function() {
-                    clearTimeout(resizeDebounce);
-                    resizeDebounce = setTimeout(() => {
-                        updateMobileState();
-                        detectKeyboard();
-                    }, 100);
-                });
-
-                // Orientation change handling
-                window.addEventListener('orientationchange', function() {
-                    setTimeout(() => {
-                        updateMobileState();
-                        originalViewportHeight = window.innerHeight;
-                    }, 500);
-                });
-
-                // Enhanced touch event handling
-                document.addEventListener('touchstart', handleTouchStart, { passive: true });
-                document.addEventListener('touchmove', handleTouchMove, { passive: false });
-                document.addEventListener('click', handleOutsideClick);
-
-                // Viewport height change detection for keyboard
-                let viewportHeightCheck;
-                window.addEventListener('resize', () => {
-                    clearTimeout(viewportHeightCheck);
-                    viewportHeightCheck = setTimeout(detectKeyboard, 150);
-                });
-
-                // Prevent zoom on double tap for iOS
-                let lastTouchEnd = 0;
-                document.addEventListener('touchend', function (event) {
-                    const now = (new Date()).getTime();
-                    if (now - lastTouchEnd <= 300) {
-                        event.preventDefault();
-                    }
-                    lastTouchEnd = now;
-                }, false);
-            }
-
-            // Enhanced accessibility improvements
-            function setupAccessibility() {
-                // Add ARIA labels to key elements
-                if (messageInput) {
-                    messageInput.setAttribute('aria-label', 'Type your message');
-                }
-                
-                if (sendBtn) {
-                    sendBtn.setAttribute('aria-label', 'Send message');
-                }
-                
-                if (messagesContainer) {
-                    messagesContainer.setAttribute('role', 'log');
-                    messagesContainer.setAttribute('aria-live', 'polite');
-                    messagesContainer.setAttribute('aria-label', 'Chat messages');
-                }
-                
-                // Add skip link for keyboard navigation
-                const skipLink = document.createElement('a');
-                skipLink.href = '#message-input';
-                skipLink.textContent = 'Skip to message input';
-                skipLink.className = 'visually-hidden';
-                skipLink.addEventListener('focus', () => {
-                    skipLink.style.position = 'fixed';
-                    skipLink.style.top = '10px';
-                    skipLink.style.left = '10px';
-                    skipLink.style.zIndex = '9999';
-                    skipLink.style.background = 'white';
-                    skipLink.style.padding = '8px';
-                    skipLink.style.border = '2px solid black';
-                    skipLink.classList.remove('visually-hidden');
-                });
-                skipLink.addEventListener('blur', () => {
-                    skipLink.classList.add('visually-hidden');
-                });
-                document.body.insertBefore(skipLink, document.body.firstChild);
-            }
-
-            // Performance optimization for mobile
-            function optimizePerformance() {
-                // Use passive event listeners where possible
-                const passiveEvents = ['touchstart', 'touchend', 'touchcancel', 'wheel'];
-                passiveEvents.forEach(eventType => {
-                    document.addEventListener(eventType, () => {}, { passive: true });
-                });
-
-                // Optimize scroll events
-                let ticking = false;
-                function updateScrollPosition() {
-                    // Optimize scroll-based animations
-                    ticking = false;
-                }
-
-                messagesContainer?.addEventListener('scroll', () => {
-                    if (!ticking) {
-                        requestAnimationFrame(updateScrollPosition);
-                        ticking = true;
-                    }
-                });
-            }
-
-            // Initialize all functionality
-            function init() {
-                updateMobileState();
-                addSidebarToggleHandlers();
-                setupEventListeners();
-                setupAccessibility();
-                optimizePerformance();
-                
-                // Set initial focus for accessibility
-                if (messageInput && !isMobile) {
-                    messageInput.focus();
-                }
-            }
-
-            // Initialize after DOM is ready
-            init();
+            const message = messageInput.value.trim();
+            if (!message) return;
             
-            // Integration with advanced features
-            if (cipherWaveAdvanced) {
-                // Hook into voice manager for incoming voice messages
-                if (window.voiceManager) {
-                    window.voiceManager.setup();
-                }
-                
-                // Hook into WebRTC data channel for advanced message handling
-                const originalOnMessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        
-                        // Route to appropriate advanced feature handlers
-                        if (data.type === 'voice-message') {
-                            if (window.voiceManager) {
-                                window.voiceManager.handleIncomingVoiceMessage(data);
-                            } else if (cipherWaveAdvanced.voiceManager) {
-                                cipherWaveAdvanced.voiceManager.handleIncomingVoiceMessage(data);
-                            }
-                        } else if (data.type === 'file-share' && cipherWaveAdvanced.fileManager) {
-                            cipherWaveAdvanced.fileManager.handleIncomingFileData(data);
-                        } else if (['reply-message', 'forward-message'].includes(data.type) && cipherWaveAdvanced.threadManager) {
-                            cipherWaveAdvanced.threadManager.handleIncomingThreadData(data);
-                        } else if (['typing-status', 'message-reaction', 'read-receipt', 'activity-status', 'presence-update'].includes(data.type) && cipherWaveAdvanced.realtimeManager) {
-                            cipherWaveAdvanced.realtimeManager.handleIncomingRealtimeData(data);
-                        } else if (data.type === 'message') {
-                            // Handle regular message
-                            const decryptedMessage = decryptMessage(data.content, currentCipher);
-                            displayMessage(decryptedMessage, 'received');
-                        }
-                    } catch (error) {
-                        console.error('Error processing message:', error);
-                    }
-                };
-                
-                // Hook into existing data channel setup
-                window.originalSetupDataChannel = window.setupDataChannel;
-                window.setupDataChannel = function(channel) {
-                    if (window.originalSetupDataChannel) {
-                        window.originalSetupDataChannel(channel);
-                    }
-                    
-                    // Replace the onmessage handler with our enhanced version
-                    channel.onmessage = originalOnMessage;
-                };
-                
-                // Enhanced display message function
-                window.originalDisplayMessage = window.displayMessage;
-                window.displayMessage = function(message, type, messageId) {
-                    const messageElement = window.originalDisplayMessage ? 
-                        window.originalDisplayMessage(message, type, messageId) : 
-                        null;
-                    
-                    if (messageElement && cipherWaveAdvanced) {
-                        // Add advanced features to the message
-                        if (cipherWaveAdvanced.threadManager) {
-                            cipherWaveAdvanced.threadManager.addMessageActionsToMessage(messageElement);
-                            cipherWaveAdvanced.threadManager.addCheckboxToMessage(messageElement);
-                        }
-                        
-                        if (cipherWaveAdvanced.securityManager) {
-                            cipherWaveAdvanced.securityManager.addEncryptionIndicatorToMessage(messageElement);
-                        }
-                        
-                        if (cipherWaveAdvanced.realtimeManager && cipherWaveAdvanced.realtimeManager.messageObserver) {
-                            cipherWaveAdvanced.realtimeManager.messageObserver.observe(messageElement);
-                        }
-                    }
-                    
-                    return messageElement;
-                };
-            }
+            // Add message to chat
+            addMessageToChat(message, 'sent');
+            
+            // Clear input
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            // Disable send button
+            const sendBtn = document.getElementById('send-btn');
+            if (sendBtn) sendBtn.disabled = true;
+            
+            // Focus back to input
+            messageInput.focus();
+        }
 
-            // Expose enhanced API
-            window.CipherWaveMobile = {
-                toggleSidebar,
-                isMobile: () => isMobile,
-                isKeyboardOpen: () => isKeyboardOpen,
-                openModal,
-                closeModal: closeModalFunc,
-                updateMobileState,
-                announceToScreenReader
-            };
+        function addMessageToChat(content, type) {
+            const messagesContainer = document.getElementById('messages-container');
+            if (!messagesContainer) return;
+            
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+            
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            messageEl.innerHTML = `
+                <div class="message-content">${escapeHtml(content)}</div>
+                <div class="message-time">${timeString}</div>
+            `;
+            
+            messagesContainer.appendChild(messageEl);
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Global error handling
+        window.addEventListener('error', function(event) {
+            console.error('Application error:', event.error);
         });
     </script>
 </body>

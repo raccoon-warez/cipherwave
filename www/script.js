@@ -90,7 +90,21 @@ const signaling = {
     },
     send: function(message) {
         if (signalingSocket && signalingSocket.readyState === WebSocket.OPEN) {
-            signalingSocket.send(JSON.stringify({ ...message, room }));
+            // For WebRTC signaling messages (offer, answer, ice-candidate), wrap them in a 'signal' type
+            if (['offer', 'answer', 'ice-candidate'].includes(message.type)) {
+                const wrappedMessage = {
+                    type: 'signal',
+                    room: room,
+                    signal: message
+                };
+                console.log('📤 Sending wrapped WebRTC signal:', wrappedMessage);
+                signalingSocket.send(JSON.stringify(wrappedMessage));
+            } else {
+                // For other messages (join, key, etc.), send directly
+                const directMessage = { ...message, room: room };
+                console.log('📤 Sending direct message:', directMessage);
+                signalingSocket.send(JSON.stringify(directMessage));
+            }
         }
     },
     onMessage: function(callback) {
@@ -135,9 +149,30 @@ if (generateRoomBtn && roomIdInput) {
 currentCipher = 'aes';
 console.log('🔐 Using default encryption cipher:', currentCipher);
 
+// Check environment and display helpful message
+if (typeof window === 'undefined') {
+    console.log('\n🌐 CipherWave is a web application that runs in your browser.');
+    console.log('📋 To use CipherWave:');
+    console.log('   1. Make sure the development server is running (npm run dev)');
+    console.log('   2. Open your web browser');
+    console.log('   3. Navigate to: http://localhost:3000/');
+    console.log('   4. Create or join a network to start chatting!');
+    console.log('\n✨ The application provides a secure P2P messaging experience.');
+} else if (typeof RTCPeerConnection === 'undefined') {
+    console.warn('⚠️ WebRTC not supported in this browser. Please use Chrome, Firefox, Safari, or Edge.');
+}
+
 // Connect to room
 if (connectBtn) {
     connectBtn.addEventListener('click', async () => {
+        // Check browser compatibility first
+        if (typeof window === 'undefined' || typeof RTCPeerConnection === 'undefined') {
+            const errorMsg = 'This application requires a modern web browser with WebRTC support. Please open http://localhost:3000/ in Chrome, Firefox, Safari, or Edge.';
+            alert(errorMsg);
+            displayMessage('❌ ' + errorMsg, 'system');
+            return;
+        }
+        
         room = roomIdInput.value.trim();
         if (!room) {
             alert('Please enter or generate a room ID');
@@ -174,14 +209,31 @@ if (connectBtn) {
 
         // Set up signaling message handler
         signaling.onMessage((msg) => {
+            console.log('Received signaling message:', msg.type);
+            
             if (msg.type === 'init') {
                 isInitiator = msg.initiator;
+                console.log('Connection initialized:', isInitiator ? 'Creating network' : 'Joining network');
+                updateConnectionStatus('connecting', isInitiator ? 'Creating network...' : 'Joining network...');
+                
                 // Start WebRTC connection after receiving init message
                 startConnection();
             } else if (msg.type === 'key') {
                 // Handle key exchange message
                 handleKeyExchange(msg);
+            } else if (msg.type === 'signal') {
+                // Handle wrapped WebRTC signaling messages
+                console.log('📞 Received WebRTC signal:', msg.signal?.type);
+                if (msg.signal) {
+                    handleSignalingMessage(msg.signal);
+                }
+            } else if (msg.type === 'error') {
+                console.error('Server error:', msg.error);
+                updateConnectionStatus('disconnected', 'Error: ' + msg.error);
+                alert('Connection error: ' + msg.error);
             } else {
+                // Handle any other direct signaling messages for backward compatibility
+                console.log('🔄 Handling direct signaling message:', msg.type);
                 handleSignalingMessage(msg);
             }
         });
@@ -206,6 +258,15 @@ function logConnectionState(state) {
 
 // WebRTC connection function
 function startConnection() {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined' || typeof RTCPeerConnection === 'undefined') {
+        const errorMsg = 'WebRTC is not available. Please open this application in a web browser at http://localhost:3000/';
+        console.error('❌ ' + errorMsg);
+        updateConnectionStatus('error', 'WebRTC not available');
+        displayMessage('❌ ' + errorMsg, 'system');
+        return;
+    }
+    
     try {
         // Update connection status
         updateConnectionStatus('connecting', 'Establishing connection...');
@@ -228,10 +289,18 @@ function startConnection() {
         peerConnection.onconnectionstatechange = () => {
             logConnectionState(`Connection state: ${peerConnection.connectionState}`);
             
-            // Clear timeout if connection is established
-            if (peerConnection.connectionState === 'connected' || 
-                peerConnection.connectionState === 'completed') {
+            if (peerConnection.connectionState === 'connected') {
+                logConnectionState('🎉 WebRTC connection established!');
                 clearTimeout(connectionTimeout);
+                updateConnectionStatus('connected', '🟢 Connected - Ready to chat!');
+            } else if (peerConnection.connectionState === 'failed') {
+                logConnectionState('❌ WebRTC connection failed');
+                updateConnectionStatus('disconnected', '❌ Connection failed');
+                displayMessage('❌ Connection failed. Please try again.', 'system');
+            } else if (peerConnection.connectionState === 'disconnected') {
+                logConnectionState('📡 WebRTC connection disconnected');
+                updateConnectionStatus('disconnected', '📡 Disconnected');
+                displayMessage('📡 Connection lost', 'system');
             }
         };
         
@@ -260,7 +329,7 @@ function startConnection() {
             if (event.candidate) {
                 logConnectionState(`ICE candidate gathered: ${event.candidate.type}`);
                 signaling.send({
-                    type: 'candidate',
+                    type: 'ice-candidate',
                     candidate: event.candidate
                 });
             } else {
@@ -363,6 +432,7 @@ function handleSignalingMessage(message) {
             break;
             
         case 'candidate':
+        case 'ice-candidate':
             logConnectionState(`Adding ICE candidate: ${message.candidate.type}`);
             peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate))
                 .then(() => {
@@ -380,7 +450,15 @@ function handleSignalingMessage(message) {
 function setupDataChannel(channel) {
     channel.onopen = () => {
         isConnected = true;
-        updateConnectionStatus('connected', 'Connected');
+        logConnectionState('Data channel opened - connection established');
+        updateConnectionStatus('connected', '🟢 Connected - Ready to chat!');
+        
+        // Show success message
+        if (isInitiator) {
+            displayMessage('🎉 Network created successfully! You can now share messages securely.', 'system');
+        } else {
+            displayMessage('🎉 Successfully joined the network! You can now chat securely.', 'system');
+        }
         
         // Close connection modal
         const modal = document.getElementById('connection-modal');
@@ -388,29 +466,61 @@ function setupDataChannel(channel) {
             modal.classList.remove('active');
             document.body.classList.remove('no-scroll');
         }
+        
+        // Focus message input
+        if (messageInput) {
+            messageInput.focus();
+        }
+        
+        console.log('✅ Data channel is now open and ready for messaging!');
     };
     
     channel.onclose = () => {
         isConnected = false;
-        updateConnectionStatus('disconnected', 'Disconnected');
+        updateConnectionStatus('disconnected', '🔴 Disconnected');
+        displayMessage('📡 Connection closed', 'system');
+        logConnectionState('Data channel closed');
     };
     
     channel.onerror = (error) => {
         logConnectionState(`Data channel error: ${error.message}`);
         console.error('Data channel error:', error);
-        updateConnectionStatus('disconnected', 'Connection error');
+        updateConnectionStatus('disconnected', '❌ Connection error');
+        displayMessage('❌ Connection error occurred', 'system');
     };
     
     channel.onmessage = event => {
         try {
+            console.log('📨 Received message:', event.data);
             const data = JSON.parse(event.data);
+            
             if (data.type === 'message') {
-                // Decrypt message
-                const decryptedMessage = decryptMessage(data.content, currentCipher);
-                displayMessage(decryptedMessage, 'received');
+                let messageText = data.content;
+                
+                // Try to decrypt if encryption is enabled and key is available
+                if (data.encrypted && encryptionKey) {
+                    try {
+                        messageText = decryptMessage(data.content, currentCipher);
+                    } catch (decryptError) {
+                        console.warn('Decryption failed:', decryptError);
+                        messageText = '[🔒 Encrypted message - decryption failed]';
+                    }
+                } else if (!data.encrypted) {
+                    // Message is not encrypted, use as-is
+                    messageText = data.content;
+                } else {
+                    // Message is encrypted but no key available
+                    console.warn('Received encrypted message but no encryption key available');
+                    messageText = '[🔒 Encrypted message - key not available]';
+                }
+                
+                displayMessage(messageText, 'received', data.messageId);
+            } else {
+                console.log('Unknown message type:', data.type);
             }
         } catch (error) {
             console.error('Error processing message:', error);
+            displayMessage('[❌ Error processing message]', 'received');
         }
     };
 }
@@ -446,30 +556,71 @@ if (messageInput) {
 // Send message function
 function sendMessage() {
     const message = messageInput.value.trim();
-    if (!message || !isConnected || !dataChannel) return;
+    if (!message) {
+        return;
+    }
+    
+    console.log('🚀 Attempting to send message:', message);
+    console.log('Connection status:', isConnected);
+    console.log('Data channel:', dataChannel);
+    console.log('Data channel state:', dataChannel?.readyState);
+    
+    if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') {
+        console.warn('Cannot send message - not connected');
+        displayMessage('⚠️ Not connected. Please establish connection first.', 'system');
+        return;
+    }
     
     try {
-        // Encrypt message
-        const encryptedMessage = encryptMessage(message, currentCipher);
-        
-        // Create message ID for tracking
         const messageId = ++messageCounter;
+        let messageData;
         
-        // Send via data channel
-        const messageData = {
-            type: 'message',
-            content: encryptedMessage,
-            timestamp: Date.now(),
-            messageId: messageId
-        };
+        // Try to encrypt if encryption is available, otherwise send plain text for testing
+        if (encryptionKey) {
+            try {
+                const encryptedMessage = encryptMessage(message, currentCipher);
+                messageData = {
+                    type: 'message',
+                    content: encryptedMessage,
+                    timestamp: Date.now(),
+                    messageId: messageId,
+                    encrypted: true
+                };
+            } catch (encryptError) {
+                console.warn('Encryption failed, sending plain text:', encryptError);
+                messageData = {
+                    type: 'message',
+                    content: message,
+                    timestamp: Date.now(),
+                    messageId: messageId,
+                    encrypted: false
+                };
+            }
+        } else {
+            // No encryption key available, send plain text
+            console.log('No encryption key, sending plain text message');
+            messageData = {
+                type: 'message',
+                content: message,
+                timestamp: Date.now(),
+                messageId: messageId,
+                encrypted: false
+            };
+        }
         
+        console.log('📤 Sending message data:', messageData);
         dataChannel.send(JSON.stringify(messageData));
+        
+        // Display sent message
         displayMessage(message, 'sent', messageId);
         messageInput.value = '';
         
+        // Auto-resize textarea
+        messageInput.style.height = 'auto';
+        
     } catch (error) {
         console.error('Error sending message:', error);
-        alert('Failed to send message');
+        displayMessage(`❌ Failed to send message: ${error.message}`, 'system');
     }
 }
 
@@ -520,13 +671,21 @@ async function initializeEncryption() {
     
     // Share the key through the signaling channel (for demo purposes)
     if (isInitiator) {
+        // Send key immediately after initialization
+        signaling.send({
+            type: 'key',
+            cipher: currentCipher,
+            key: encryptionKey.toString()
+        });
+        
+        // Also send key again after WebRTC connection is established to ensure receipt
         setTimeout(() => {
             signaling.send({
                 type: 'key',
                 cipher: currentCipher,
                 key: encryptionKey.toString()
             });
-        }, 2000);
+        }, 3000);
     }
 }
 

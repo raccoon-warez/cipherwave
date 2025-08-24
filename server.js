@@ -739,12 +739,16 @@ wss.on('connection', function connection(ws, req) {
         const now = Date.now();
         
         // Rate limiting per connection (messages per minute)
-        const messageRateLimit = 60; // messages per minute
         const messageWindow = 60 * 1000; // 1 minute
         
         if (!ws.messageTimestamps) {
             ws.messageTimestamps = [];
         }
+        
+        // More lenient during initial connection setup
+        const initialMessageGracePeriod = 10000; // 10 seconds after connection
+        const isInitialPeriod = now - ws.connectionTime < initialMessageGracePeriod;
+        const messageRateLimit = isInitialPeriod ? 120 : 60; // 120 during initial setup, 60 after
         
         // Remove old timestamps
         ws.messageTimestamps = ws.messageTimestamps.filter(timestamp => 
@@ -788,8 +792,10 @@ wss.on('connection', function connection(ws, req) {
         }
         
         // Check for minimum time between messages (anti-spam)
-        const minMessageInterval = 50; // 50ms minimum between messages
-        if (now - ws.lastMessageTime < minMessageInterval) {
+        // Allow faster initial messages for connection establishment
+        const minMessageInterval = isInitialPeriod ? 0 : 50; // No limit during initial setup, 50ms after
+        
+        if (minMessageInterval > 0 && now - ws.lastMessageTime < minMessageInterval) {
             ws.send(JSON.stringify({ 
                 type: 'error', 
                 error: 'Messages sent too quickly' 
@@ -875,7 +881,7 @@ wss.on('connection', function connection(ws, req) {
         }
         
         // Validate message type whitelist
-        const allowedMessageTypes = ['join', 'offer', 'answer', 'ice-candidate', 'signal', 'ping'];
+        const allowedMessageTypes = ['join', 'offer', 'answer', 'ice-candidate', 'candidate', 'signal', 'ping', 'key'];
         if (!allowedMessageTypes.includes(data.type)) {
             log(`Unknown message type from client ${ws.clientIp}: ${data.type}`, 'WARN');
             ws.send(JSON.stringify({ 

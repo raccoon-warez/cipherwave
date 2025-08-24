@@ -291,11 +291,13 @@ class ConnectionManager {
             return true;
         } catch (error) {
             console.error('Failed to add ICE candidate:', error);
-            // Don't emit error for ICE candidate failures as they're often recoverable\n            return false;
+            // Don't emit error for ICE candidate failures as they're often recoverable
+            return false;
         }
     }
     
-    // Send data through the connection\n    sendData(data) {
+    // Send data through the connection
+    sendData(data) {
         if (this.isConnected && this.dataChannel && this.dataChannel.readyState === 'open') {
             try {
                 // Check buffer before sending
@@ -315,7 +317,8 @@ class ConnectionManager {
         return false;
     }
     
-    // Connection event handlers\n    handleConnectionEstablished() {
+    // Connection event handlers
+    handleConnectionEstablished() {
         this.clearConnectionTimeout();
         this.reconnectAttempts = 0;
         this.reconnectDelay = 1000; // Reset delay
@@ -361,7 +364,8 @@ class ConnectionManager {
             this.iceTimeout = setTimeout(() => {
                 if (this.peerConnection.iceGatheringState === 'gathering') {
                     console.warn('ICE gathering timeout');
-                    // Force completion\n                    this.peerConnection.onicecandidate({ candidate: null });
+                    // Force completion
+                    this.peerConnection.onicecandidate({ candidate: null });
                 }
             }, 30000); // 30 second timeout
         } else {
