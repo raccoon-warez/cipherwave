@@ -1,11 +1,11 @@
 openapi: 3.1.0
 info:
-  title: CipherWave Secure WebRTC Signaling API
-  version: 2.0.0
+  title: CipherWave Decentralized Authentication & Messaging API
+  version: 3.0.0
   description: |
-    Comprehensive secure WebRTC signaling protocols for CipherWave P2P messenger.
-    Implements cryptographically secure key exchange, peer authentication, and 
-    perfect forward secrecy for secure messaging.
+    Comprehensive decentralized authentication and secure messaging system for CipherWave.
+    Features Ed25519 identity keys, local encrypted storage, P2P trust establishment,
+    and offline-capable message persistence with perfect forward secrecy.
   contact:
     name: CipherWave Team
     url: https://github.com/raccoon-warez/cipherwave
@@ -20,16 +20,16 @@ servers:
     description: Production signaling server
 
 security:
+  - IdentityAuth: []
   - SessionAuth: []
-  - TurnCredentials: []
 
 paths:
   /ws:
     get:
-      summary: WebSocket Connection Endpoint
+      summary: WebSocket Connection for P2P Communication
       description: |
-        Establish WebSocket connection for real-time signaling.
-        Includes origin validation and rate limiting.
+        Establish WebSocket connection for decentralized signaling only.
+        Server remains stateless - no user data storage.
       parameters:
         - name: Origin
           in: header
@@ -37,47 +37,48 @@ paths:
           schema:
             type: string
             pattern: '^https?://(localhost|[\w\-\.]+\.cipherwave\.app)(:\d+)?$'
-          description: Validated origin header for CORS
-        - name: Sec-WebSocket-Protocol
+        - name: X-Client-Version
           in: header
           schema:
             type: string
-            enum: [cipherwave-v2]
-          description: Protocol version specification
+            pattern: '^\d+\.\d+\.\d+$'
       responses:
         '101':
           description: WebSocket connection established
-          headers:
-            Sec-WebSocket-Accept:
-              schema:
-                type: string
         '403':
-          description: Origin validation failed or rate limited
+          description: Origin validation failed
         '429':
-          description: Connection rate limit exceeded
+          description: Rate limit exceeded
 
 components:
   securitySchemes:
+    IdentityAuth:
+      type: apiKey
+      in: header
+      name: X-Identity-Key
+      description: Base64 encoded Ed25519 public key for peer identity
+    
     SessionAuth:
       type: apiKey
       in: header
       name: X-Session-Token
-      description: Session authentication token
-    
-    TurnCredentials:
-      type: http
-      scheme: bearer
-      description: Temporary TURN server credentials
+      description: Ephemeral session token for WebRTC signaling
 
   schemas:
-    # Core Message Types
+    # Base Message Structure
     BaseMessage:
       type: object
-      required: [type, timestamp, messageId]
+      required: [type, timestamp, messageId, version]
       properties:
         type:
           type: string
-          enum: [join, auth-challenge, auth-response, key-exchange, offer, answer, ice-candidate, message, delivery-confirm, error, peer-disconnect]
+          enum: [
+            identity-announce, trust-request, trust-response,
+            key-exchange-init, key-exchange-response, key-exchange-confirm,
+            message-encrypted, message-delivered, message-read,
+            sync-request, sync-response, presence-update,
+            offer, answer, ice-candidate, ping, error
+          ]
         timestamp:
           type: integer
           format: int64
@@ -86,113 +87,180 @@ components:
           type: string
           pattern: '^[a-zA-Z0-9\-_]{16,64}$'
           description: Unique message identifier
-        sessionId:
+        version:
           type: string
-          pattern: '^[a-fA-F0-9]{64}$'
-          description: Session identifier (optional for some message types)
-      discriminator:
-        propertyName: type
-        mapping:
-          join: '#/components/schemas/JoinMessage'
-          auth-challenge: '#/components/schemas/AuthChallengeMessage'
-          auth-response: '#/components/schemas/AuthResponseMessage'
-          key-exchange: '#/components/schemas/KeyExchangeMessage'
-          offer: '#/components/schemas/OfferMessage'
-          answer: '#/components/schemas/AnswerMessage'
-          ice-candidate: '#/components/schemas/IceCandidateMessage'
-          message: '#/components/schemas/ChatMessage'
-          delivery-confirm: '#/components/schemas/DeliveryConfirmMessage'
-          error: '#/components/schemas/ErrorMessage'
-          peer-disconnect: '#/components/schemas/PeerDisconnectMessage'
+          enum: ['3.0']
+          description: Protocol version
+        signature:
+          type: string
+          format: base64
+          description: Ed25519 signature of message (when required)
 
-    # Authentication & Session Management
-    JoinMessage:
+    # Identity & Authentication
+    IdentityAnnounceMessage:
       allOf:
         - $ref: '#/components/schemas/BaseMessage'
         - type: object
-          required: [roomId, publicKey, capabilities]
+          required: [identityKey, deviceId, capabilities, proof]
           properties:
-            roomId:
-              type: string
-              pattern: '^[a-zA-Z0-9\-_]{8,64}$'
-              description: Room identifier
-            publicKey:
+            identityKey:
               type: string
               format: base64
-              description: Ed25519 public key for peer identification
+              description: Ed25519 public key (32 bytes, base64 encoded)
+            deviceId:
+              type: string
+              pattern: '^[a-fA-F0-9]{32}$'
+              description: Unique device identifier
+            displayName:
+              type: string
+              maxLength: 64
+              description: Optional display name (encrypted in storage)
+            avatar:
+              type: string
+              format: base64
+              description: Optional avatar data (small, encrypted)
             capabilities:
               $ref: '#/components/schemas/PeerCapabilities'
-            clientInfo:
-              $ref: '#/components/schemas/ClientInfo'
+            proof:
+              $ref: '#/components/schemas/IdentityProof'
+            trustLevel:
+              type: integer
+              minimum: 0
+              maximum: 100
+              description: Self-reported trust level
 
-    AuthChallengeMessage:
+    IdentityProof:
+      type: object
+      required: [challenge, signature, timestamp]
+      properties:
+        challenge:
+          type: string
+          format: base64
+          description: Self-generated challenge proving key control
+        signature:
+          type: string
+          format: base64
+          description: Ed25519 signature of challenge with identity key
+        timestamp:
+          type: integer
+          format: int64
+          description: Proof generation timestamp
+
+    # Trust Establishment
+    TrustRequestMessage:
       allOf:
         - $ref: '#/components/schemas/BaseMessage'
         - type: object
-          required: [challenge, algorithm]
+          required: [targetIdentity, trustLevel, challenge]
           properties:
+            targetIdentity:
+              type: string
+              format: base64
+              description: Target peer's Ed25519 public key
+            trustLevel:
+              type: integer
+              minimum: 0
+              maximum: 100
+              description: Requested trust level (0-100)
             challenge:
               type: string
               format: base64
-              description: Cryptographic challenge (32 bytes, base64 encoded)
-            algorithm:
-              type: string
-              enum: [ed25519]
-              description: Signature algorithm required
-            ttl:
-              type: integer
-              minimum: 300
-              maximum: 1800
-              description: Challenge time-to-live in seconds
+              description: Cryptographic challenge (32 bytes)
+            metadata:
+              type: object
+              description: Additional trust establishment data
 
-    AuthResponseMessage:
+    TrustResponseMessage:
       allOf:
         - $ref: '#/components/schemas/BaseMessage'
         - type: object
-          required: [signature, publicKey]
+          required: [requestId, accepted, challengeResponse]
           properties:
-            signature:
+            requestId:
+              type: string
+              description: Original trust request message ID
+            accepted:
+              type: boolean
+              description: Whether trust request is accepted
+            trustLevel:
+              type: integer
+              minimum: 0
+              maximum: 100
+              description: Granted trust level
+            challengeResponse:
               type: string
               format: base64
               description: Ed25519 signature of challenge
-            publicKey:
+            reciprocalChallenge:
               type: string
               format: base64
-              description: Ed25519 public key (64 bytes, base64 encoded)
+              description: Challenge for mutual trust establishment
 
-    # Secure Key Exchange
-    KeyExchangeMessage:
+    # Enhanced Key Exchange
+    KeyExchangeInitMessage:
       allOf:
         - $ref: '#/components/schemas/BaseMessage'
         - type: object
-          required: [phase, algorithm]
+          required: [ephemeralKey, identitySignature, kdfParams]
           properties:
-            phase:
-              type: string
-              enum: [init, response, confirm]
-              description: Key exchange phase
-            algorithm:
-              type: string
-              enum: [x25519-ecdh]
-              description: Key exchange algorithm
-            publicKey:
+            ephemeralKey:
               type: string
               format: base64
-              description: X25519 public key (32 bytes, base64 encoded)
-            signature:
+              description: X25519 public key for session (32 bytes)
+            identitySignature:
               type: string
               format: base64
-              description: Ed25519 signature of public key
-            encryptedData:
-              type: string
-              format: base64
-              description: Encrypted session parameters (phase=confirm only)
-            kdf:
+              description: Ed25519 signature of ephemeral key
+            kdfParams:
               $ref: '#/components/schemas/KeyDerivationParams'
+            supportedCiphers:
+              type: array
+              items:
+                type: string
+                enum: [chacha20-poly1305, aes-256-gcm]
+            sessionMetadata:
+              type: object
+              description: Encrypted session parameters
+
+    KeyExchangeResponseMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          required: [ephemeralKey, identitySignature, selectedCipher]
+          properties:
+            ephemeralKey:
+              type: string
+              format: base64
+              description: Responder's X25519 public key
+            identitySignature:
+              type: string
+              format: base64
+              description: Ed25519 signature of ephemeral key
+            selectedCipher:
+              type: string
+              enum: [chacha20-poly1305, aes-256-gcm]
+            sessionConfirm:
+              type: string
+              format: base64
+              description: Encrypted confirmation using derived session key
+
+    KeyExchangeConfirmMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          required: [finalConfirm]
+          properties:
+            finalConfirm:
+              type: string
+              format: base64
+              description: Final handshake confirmation
+            sessionReady:
+              type: boolean
+              default: true
 
     KeyDerivationParams:
       type: object
-      required: [algorithm, salt, iterations]
+      required: [algorithm, salt, info]
       properties:
         algorithm:
           type: string
@@ -200,60 +268,347 @@ components:
         salt:
           type: string
           format: base64
-          description: Random salt (32 bytes, base64 encoded)
+          description: Random salt (32 bytes)
+        info:
+          type: string
+          default: "CipherWave-v3-Session"
         iterations:
           type: integer
           minimum: 1
           maximum: 1
-          description: HKDF iterations (always 1)
-        info:
-          type: string
-          default: "CipherWave-v2-Session-Key"
-          description: HKDF context information
 
-    # WebRTC Signaling
+    # Encrypted Messaging with Persistence
+    EncryptedMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          required: [recipientId, encryptedPayload, storageHint]
+          properties:
+            recipientId:
+              type: string
+              format: base64
+              description: Recipient's identity key
+            encryptedPayload:
+              $ref: '#/components/schemas/EncryptedPayload'
+            storageHint:
+              $ref: '#/components/schemas/MessageStorageHint'
+            deliveryOptions:
+              $ref: '#/components/schemas/DeliveryOptions'
+            replyToId:
+              type: string
+              description: Message ID being replied to
+
+    EncryptedPayload:
+      type: object
+      required: [ciphertext, nonce, algorithm]
+      properties:
+        ciphertext:
+          type: string
+          format: base64
+          description: Encrypted message content
+        nonce:
+          type: string
+          format: base64
+          description: Encryption nonce (12 bytes for ChaCha20-Poly1305)
+        algorithm:
+          type: string
+          enum: [chacha20-poly1305, aes-256-gcm]
+        mac:
+          type: string
+          format: base64
+          description: Message authentication code
+        sessionKeyId:
+          type: string
+          description: Session key identifier for decryption
+
+    MessageStorageHint:
+      type: object
+      properties:
+        ttl:
+          type: integer
+          minimum: 0
+          description: Time-to-live in seconds (0 = forever)
+        priority:
+          type: string
+          enum: [low, normal, high, critical]
+          default: normal
+        syncRequired:
+          type: boolean
+          default: true
+          description: Whether message should be synced across devices
+        encryptedSize:
+          type: integer
+          description: Size of encrypted payload for storage planning
+
+    DeliveryOptions:
+      type: object
+      properties:
+        requireAck:
+          type: boolean
+          default: true
+        requireRead:
+          type: boolean
+          default: false
+        maxRetries:
+          type: integer
+          minimum: 0
+          maximum: 10
+          default: 3
+        retryDelay:
+          type: integer
+          minimum: 1000
+          maximum: 300000
+          default: 5000
+
+    # Message Status & Delivery
+    MessageDeliveredMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          required: [originalMessageId, deliveredAt]
+          properties:
+            originalMessageId:
+              type: string
+              description: ID of delivered message
+            deliveredAt:
+              type: integer
+              format: int64
+              description: Delivery timestamp
+            deliveryProof:
+              type: string
+              format: base64
+              description: Ed25519 signature for non-repudiation
+
+    MessageReadMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          required: [originalMessageId, readAt]
+          properties:
+            originalMessageId:
+              type: string
+            readAt:
+              type: integer
+              format: int64
+            readProof:
+              type: string
+              format: base64
+              description: Ed25519 signature proving message was read
+
+    # Offline Synchronization
+    SyncRequestMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          required: [lastSyncTime, deviceId]
+          properties:
+            lastSyncTime:
+              type: integer
+              format: int64
+              description: Last successful sync timestamp
+            deviceId:
+              type: string
+              pattern: '^[a-fA-F0-9]{32}$'
+            syncScope:
+              $ref: '#/components/schemas/SyncScope'
+            maxMessages:
+              type: integer
+              minimum: 1
+              maximum: 1000
+              default: 100
+
+    SyncResponseMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          required: [syncId, messages, hasMore]
+          properties:
+            syncId:
+              type: string
+              description: Unique sync session identifier
+            messages:
+              type: array
+              items:
+                $ref: '#/components/schemas/SyncedMessage'
+            hasMore:
+              type: boolean
+              description: Whether more messages are available
+            nextSyncToken:
+              type: string
+              description: Token for continuing sync
+
+    SyncScope:
+      type: object
+      properties:
+        conversations:
+          type: array
+          items:
+            type: string
+          description: Conversation IDs to sync
+        messageTypes:
+          type: array
+          items:
+            type: string
+            enum: [text, file, image, system]
+        timeRange:
+          $ref: '#/components/schemas/TimeRange'
+
+    TimeRange:
+      type: object
+      required: [start]
+      properties:
+        start:
+          type: integer
+          format: int64
+        end:
+          type: integer
+          format: int64
+
+    SyncedMessage:
+      type: object
+      required: [messageId, encryptedPayload, storageMetadata]
+      properties:
+        messageId:
+          type: string
+        encryptedPayload:
+          $ref: '#/components/schemas/EncryptedPayload'
+        storageMetadata:
+          $ref: '#/components/schemas/StorageMetadata'
+
+    # Storage & Persistence
+    StorageMetadata:
+      type: object
+      required: [conversationId, timestamp, senderId]
+      properties:
+        conversationId:
+          type: string
+          description: Conversation identifier (derived from participant identities)
+        timestamp:
+          type: integer
+          format: int64
+        senderId:
+          type: string
+          format: base64
+          description: Sender's identity key
+        storageKey:
+          type: string
+          format: base64
+          description: Per-message storage encryption key
+        deliveryStatus:
+          type: string
+          enum: [pending, sent, delivered, read, failed]
+        syncStatus:
+          type: string
+          enum: [local, syncing, synced, conflict]
+
+    # Enhanced Peer Capabilities
+    PeerCapabilities:
+      type: object
+      required: [protocols, encryption, signatures, keyExchange]
+      properties:
+        protocols:
+          type: array
+          items:
+            type: string
+            enum: [webrtc-2.0, datachannel-2.0, cipherwave-v3]
+        encryption:
+          type: array
+          items:
+            type: string
+            enum: [chacha20-poly1305, aes-256-gcm]
+        signatures:
+          type: array
+          items:
+            type: string
+            enum: [ed25519]
+        keyExchange:
+          type: array
+          items:
+            type: string
+            enum: [x25519-ecdh]
+        storage:
+          type: array
+          items:
+            type: string
+            enum: [indexed-db, local-storage, secure-enclave]
+        features:
+          type: array
+          items:
+            type: string
+            enum: [offline-messages, file-sharing, voice-calls, group-chat]
+        maxMessageSize:
+          type: integer
+          minimum: 1024
+          maximum: 1048576
+          default: 65536
+        storageQuota:
+          type: integer
+          description: Available storage in bytes
+
+    # Presence & Status
+    PresenceUpdateMessage:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessage'
+        - type: object
+          required: [status, deviceId]
+          properties:
+            status:
+              type: string
+              enum: [online, away, busy, offline]
+            deviceId:
+              type: string
+              pattern: '^[a-fA-F0-9]{32}$'
+            lastSeen:
+              type: integer
+              format: int64
+            customStatus:
+              type: string
+              maxLength: 128
+
+    # WebRTC with Enhanced Security
     OfferMessage:
       allOf:
         - $ref: '#/components/schemas/BaseMessage'
         - type: object
-          required: [sdp, signature]
+          required: [sdp, identitySignature]
           properties:
             sdp:
               $ref: '#/components/schemas/SessionDescription'
-            signature:
+            identitySignature:
               type: string
               format: base64
-              description: Ed25519 signature of SDP
-            iceParams:
+              description: Ed25519 signature of SDP for tampering prevention
+            iceParameters:
               $ref: '#/components/schemas/IceParameters'
+            securityRequirements:
+              $ref: '#/components/schemas/SecurityRequirements'
 
     AnswerMessage:
       allOf:
         - $ref: '#/components/schemas/BaseMessage'
         - type: object
-          required: [sdp, signature]
+          required: [sdp, identitySignature]
           properties:
             sdp:
               $ref: '#/components/schemas/SessionDescription'
-            signature:
+            identitySignature:
               type: string
               format: base64
-              description: Ed25519 signature of SDP
-            iceParams:
+            iceParameters:
               $ref: '#/components/schemas/IceParameters'
 
     IceCandidateMessage:
       allOf:
         - $ref: '#/components/schemas/BaseMessage'
         - type: object
-          required: [candidate, signature]
+          required: [candidate, identitySignature]
           properties:
             candidate:
               $ref: '#/components/schemas/IceCandidate'
-            signature:
+            identitySignature:
               type: string
               format: base64
-              description: Ed25519 signature of candidate
+              description: Ed25519 signature of ICE candidate
             endOfCandidates:
               type: boolean
               default: false
@@ -275,14 +630,11 @@ components:
       properties:
         candidate:
           type: string
-          description: ICE candidate string
         sdpMLineIndex:
           type: integer
           minimum: 0
-          description: SDP m-line index
         sdpMid:
           type: string
-          description: SDP media identifier
 
     IceParameters:
       type: object
@@ -297,7 +649,7 @@ components:
           default: all
         bundlePolicy:
           type: string
-          enum: [balanced, max-compat, max-bundle]
+          enum: [max-bundle]
           default: max-bundle
 
     IceServer:
@@ -312,74 +664,26 @@ components:
                 type: string
         username:
           type: string
-          description: TURN username (ephemeral)
         credential:
           type: string
-          description: TURN password (ephemeral)
         credentialType:
           type: string
-          enum: [password, oauth]
+          enum: [password]
           default: password
 
-    # Encrypted Messaging
-    ChatMessage:
-      allOf:
-        - $ref: '#/components/schemas/BaseMessage'
-        - type: object
-          required: [encryptedContent, nonce, mac]
-          properties:
-            encryptedContent:
-              type: string
-              format: base64
-              description: ChaCha20-Poly1305 encrypted message content
-            nonce:
-              type: string
-              format: base64
-              description: 12-byte nonce for encryption
-            mac:
-              type: string
-              format: base64
-              description: Message authentication code
-            messageType:
-              type: string
-              enum: [text, file, image, typing]
-              default: text
-            replyTo:
-              type: string
-              description: Message ID being replied to
-            metadata:
-              $ref: '#/components/schemas/MessageMetadata'
-
-    MessageMetadata:
+    SecurityRequirements:
       type: object
       properties:
-        size:
-          type: integer
-          minimum: 0
-          description: Original message size in bytes
-        mimeType:
+        requireDTLS:
+          type: boolean
+          default: true
+        requireSRTP:
+          type: boolean
+          default: true
+        cipherSuite:
           type: string
-          description: MIME type for file messages
-        filename:
-          type: string
-          description: Original filename for file messages
-
-    DeliveryConfirmMessage:
-      allOf:
-        - $ref: '#/components/schemas/BaseMessage'
-        - type: object
-          required: [originalMessageId, status]
-          properties:
-            originalMessageId:
-              type: string
-              description: ID of message being confirmed
-            status:
-              type: string
-              enum: [delivered, read, failed]
-            signature:
-              type: string
-              format: base64
-              description: Ed25519 signature for non-repudiation
+          enum: [ECDHE-ECDSA-AES128-GCM-SHA256]
+          default: ECDHE-ECDSA-AES128-GCM-SHA256
 
     # Error Handling
     ErrorMessage:
@@ -391,185 +695,119 @@ components:
             errorCode:
               type: string
               enum: [
-                INVALID_MESSAGE,
-                AUTHENTICATION_FAILED,
-                KEY_EXCHANGE_FAILED,
-                ROOM_FULL,
-                ROOM_NOT_FOUND,
-                PEER_NOT_FOUND,
-                RATE_LIMIT_EXCEEDED,
-                PROTOCOL_VIOLATION,
-                ENCRYPTION_ERROR,
-                SIGNATURE_INVALID,
-                SESSION_EXPIRED
+                INVALID_MESSAGE, AUTHENTICATION_FAILED, TRUST_REQUIRED,
+                KEY_EXCHANGE_FAILED, ENCRYPTION_ERROR, STORAGE_FULL,
+                SYNC_FAILED, RATE_LIMIT_EXCEEDED, PROTOCOL_VIOLATION,
+                SIGNATURE_INVALID, IDENTITY_NOT_FOUND, SESSION_EXPIRED,
+                OFFLINE_DELIVERY_FAILED, TRUST_LEVEL_INSUFFICIENT
               ]
             errorMessage:
               type: string
               maxLength: 256
             details:
               type: object
-              description: Additional error context
+            retryable:
+              type: boolean
+              default: false
+            retryAfter:
+              type: integer
+              description: Seconds to wait before retry
 
-    PeerDisconnectMessage:
+    # Ping for Connection Health
+    PingMessage:
       allOf:
         - $ref: '#/components/schemas/BaseMessage'
         - type: object
-          required: [reason]
           properties:
-            reason:
+            payload:
               type: string
-              enum: [user-disconnect, timeout, error, server-shutdown]
-            graceful:
+              format: base64
+              description: Optional ping payload
+            expectPong:
               type: boolean
               default: true
 
-    # System Information
-    PeerCapabilities:
-      type: object
-      properties:
-        protocols:
-          type: array
-          items:
-            type: string
-            enum: [webrtc-1.0, datachannel-1.0]
-        encryption:
-          type: array
-          items:
-            type: string
-            enum: [chacha20-poly1305, aes-256-gcm]
-        signatures:
-          type: array
-          items:
-            type: string
-            enum: [ed25519]
-        keyExchange:
-          type: array
-          items:
-            type: string
-            enum: [x25519-ecdh]
-        maxMessageSize:
-          type: integer
-          minimum: 1024
-          maximum: 65536
-          default: 32768
-
-    ClientInfo:
-      type: object
-      properties:
-        userAgent:
-          type: string
-          maxLength: 200
-        version:
-          type: string
-          pattern: '^\d+\.\d+\.\d+$'
-        platform:
-          type: string
-          enum: [web, android, ios, desktop]
-
-    # Session Management
-    SessionInfo:
-      type: object
-      required: [sessionId, peerCount, created]
-      properties:
-        sessionId:
-          type: string
-          pattern: '^[a-fA-F0-9]{64}$'
-        peerCount:
-          type: integer
-          minimum: 0
-          maximum: 2
-        created:
-          type: integer
-          format: int64
-        lastActivity:
-          type: integer
-          format: int64
-        encryptionState:
-          type: string
-          enum: [none, negotiating, established]
-        connectionState:
-          type: string
-          enum: [new, connecting, connected, disconnected, failed, closed]
-
   examples:
-    JoinRoomExample:
-      summary: Join room with peer authentication
+    IdentityAnnouncement:
+      summary: Peer announcing identity with proof
       value:
-        type: join
+        type: identity-announce
         timestamp: 1693526400000
-        messageId: "msg-1234567890abcdef"
-        roomId: "secure-room-abc123"
-        publicKey: "MCowBQYDK2VwAyEA..."
+        messageId: "id-announce-abc123"
+        version: "3.0"
+        identityKey: "MCowBQYDK2VwAyEA..."
+        deviceId: "f47ac10b58cc4372a567c0e02b2c3d479"
+        displayName: "Alice"
         capabilities:
-          protocols: [webrtc-1.0, datachannel-1.0]
+          protocols: [webrtc-2.0, cipherwave-v3]
           encryption: [chacha20-poly1305]
           signatures: [ed25519]
           keyExchange: [x25519-ecdh]
-          maxMessageSize: 32768
-        clientInfo:
-          userAgent: "CipherWave/2.0.0"
-          version: "2.0.0"
-          platform: "web"
+          storage: [indexed-db]
+          features: [offline-messages, file-sharing]
+          maxMessageSize: 65536
+        proof:
+          challenge: "randomChallenge32bytes..."
+          signature: "ed25519Signature..."
+          timestamp: 1693526400000
+        trustLevel: 50
 
-  responses:
-    ValidationError:
-      description: Request validation failed
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorMessage'
-    
-    AuthenticationError:
-      description: Authentication failed
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorMessage'
-    
-    RateLimitError:
-      description: Rate limit exceeded
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              retryAfter:
-                type: integer
-                description: Seconds to wait before retry
+    SecureKeyExchange:
+      summary: Initiating secure key exchange
+      value:
+        type: key-exchange-init
+        timestamp: 1693526400000
+        messageId: "kex-init-abc123"
+        version: "3.0"
+        ephemeralKey: "x25519PublicKey32bytes..."
+        identitySignature: "ed25519SignatureOfEphemeralKey..."
+        kdfParams:
+          algorithm: hkdf-sha256
+          salt: "randomSalt32bytes..."
+          info: "CipherWave-v3-Session"
+        supportedCiphers: [chacha20-poly1305, aes-256-gcm]
+        signature: "ed25519SignatureOfEntireMessage..."
 
-webhooks:
-  peerConnection:
-    post:
-      summary: Peer connection state change
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                event:
-                  type: string
-                  enum: [connected, disconnected, failed]
-                sessionId:
-                  type: string
-                timestamp:
-                  type: integer
-                  format: int64
+    EncryptedMessageExample:
+      summary: Encrypted message with storage hints
+      value:
+        type: message-encrypted
+        timestamp: 1693526400000
+        messageId: "msg-encrypted-abc123"
+        version: "3.0"
+        recipientId: "recipientIdentityKey..."
+        encryptedPayload:
+          ciphertext: "encryptedMessageContent..."
+          nonce: "12byteNonce..."
+          algorithm: chacha20-poly1305
+          mac: "authenticationCode..."
+          sessionKeyId: "session-key-id-123"
+        storageHint:
+          ttl: 604800
+          priority: normal
+          syncRequired: true
+          encryptedSize: 1024
+        deliveryOptions:
+          requireAck: true
+          requireRead: false
+          maxRetries: 3
+          retryDelay: 5000
+        signature: "ed25519MessageSignature..."
 
 tags:
-  - name: Authentication
-    description: Peer authentication and session management
+  - name: Identity & Trust
+    description: Peer identity management and trust establishment
   - name: Key Exchange
-    description: Secure key exchange protocols
-  - name: WebRTC Signaling
-    description: WebRTC connection establishment
+    description: Secure session key establishment
   - name: Messaging
-    description: Encrypted message exchange
-  - name: Session Management
-    description: Session lifecycle management
+    description: Encrypted message exchange with persistence
+  - name: Synchronization  
+    description: Offline message synchronization
+  - name: WebRTC Signaling
+    description: Secure WebRTC connection establishment
+  - name: Storage & Persistence
+    description: Local encrypted storage management
 
 externalDocs:
-  description: CipherWave Security Architecture
-  url: https://github.com/raccoon-warez/cipherwave/docs/security.md
+  description: CipherWave Decentralized Authentication Architecture
+  url: https://github.com/raccoon-warez/cipherwave/docs/auth-architecture.md
