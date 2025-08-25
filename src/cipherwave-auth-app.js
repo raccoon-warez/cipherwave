@@ -69,6 +69,9 @@ export class CipherWaveAuthApp {
             this.storageManager = authData.storageManager;
             this.isAuthenticated = true;
             
+            // Initialize multi-device features
+            await this.identityManager.initializeMultiDeviceFeatures(this.storageManager);
+            
             await this.initializeChatComponents();
             this.showChatScreen();
         });

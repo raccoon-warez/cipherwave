@@ -3,6 +3,9 @@
 
 import sodium from 'libsodium-wrappers';
 import { SecurityManager } from './security-manager.js';
+import { DeviceTrustManager } from './device-trust-manager.js';
+import { SyncCoordinator } from './sync-coordinator.js';
+import { RecoveryManager } from './recovery-manager.js';
 
 export class IdentityManager extends SecurityManager {
     constructor() {
@@ -12,6 +15,11 @@ export class IdentityManager extends SecurityManager {
         this.storageKey = 'cipherwave_identity';
         this.trustedContacts = new Map();
         this.deviceId = null;
+        
+        // Multi-device management
+        this.deviceTrustManager = null;
+        this.syncCoordinator = null;
+        this.recoveryManager = null;
         
         // Password-based key derivation settings
         this.pbkdf2Settings = {
@@ -24,7 +32,35 @@ export class IdentityManager extends SecurityManager {
     async initialize() {
         await super.initialize();
         this.deviceId = await this.generateDeviceId();
+        
+        // Initialize multi-device managers
+        this.deviceTrustManager = new DeviceTrustManager(this);
+        await this.deviceTrustManager.initialize();
+        
         console.log('🆔 Identity manager initialized');
+    }
+
+    // Initialize sync and recovery after login
+    async initializeMultiDeviceFeatures(storageManager) {
+        if (!this.isLoggedIn) {
+            throw new Error('User must be logged in to initialize multi-device features');
+        }
+
+        try {
+            // Initialize sync coordinator
+            this.syncCoordinator = new SyncCoordinator(this, storageManager, this.deviceTrustManager);
+            await this.syncCoordinator.initialize();
+
+            // Initialize recovery manager
+            this.recoveryManager = new RecoveryManager(this, this.deviceTrustManager);
+            await this.recoveryManager.initialize();
+
+            console.log('🔄 Multi-device features initialized');
+
+        } catch (error) {
+            console.error('Failed to initialize multi-device features:', error);
+            throw error;
+        }
     }
 
     // Generate or load existing user identity
@@ -402,6 +438,23 @@ export class IdentityManager extends SecurityManager {
     // Enhanced destroy method
     destroy() {
         this.logout();
+        
+        // Cleanup multi-device managers
+        if (this.syncCoordinator) {
+            this.syncCoordinator.destroy();
+            this.syncCoordinator = null;
+        }
+        
+        if (this.recoveryManager) {
+            this.recoveryManager.destroy();
+            this.recoveryManager = null;
+        }
+        
+        if (this.deviceTrustManager) {
+            this.deviceTrustManager.destroy();
+            this.deviceTrustManager = null;
+        }
+        
         super.destroy();
         console.log('🗑️ Identity manager destroyed');
     }

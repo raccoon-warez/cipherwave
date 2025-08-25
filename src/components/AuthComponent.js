@@ -4,14 +4,16 @@
 import { BaseComponent } from './BaseComponent.js';
 import { IdentityManager } from '../managers/identity-manager.js';
 import { StorageManager } from '../managers/storage-manager.js';
+import { DevicePairingComponent } from './DevicePairingComponent.js';
 
 export class AuthComponent extends BaseComponent {
     constructor() {
         super();
         this.identityManager = new IdentityManager();
         this.storageManager = null;
+        this.devicePairingComponent = null;
         this.isInitialized = false;
-        this.currentView = 'welcome'; // welcome, login, register, profile
+        this.currentView = 'welcome'; // welcome, login, register, profile, devices
     }
 
     async initialize() {
@@ -42,6 +44,8 @@ export class AuthComponent extends BaseComponent {
                 return this.getRegisterHTML();
             case 'profile':
                 return this.getProfileHTML();
+            case 'devices':
+                return this.getDevicesHTML();
             default:
                 return this.getWelcomeHTML();
         }
@@ -272,11 +276,30 @@ export class AuthComponent extends BaseComponent {
                             <button class="btn btn-primary" id="start-chat-btn">
                                 💬 Start Chatting
                             </button>
+                            <button class="btn btn-secondary" id="manage-devices-btn">
+                                🔗 Manage Devices
+                            </button>
                             <button class="btn btn-danger" id="delete-identity-btn">
                                 🗑️ Delete Identity
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getDevicesHTML() {
+        return `
+            <div class="auth-container">
+                <div class="device-management-container" id="device-management-container">
+                    <!-- Device pairing component will be mounted here -->
+                </div>
+                
+                <div class="back-to-profile">
+                    <button class="btn btn-secondary" id="back-to-profile-btn">
+                        ← Back to Profile
+                    </button>
                 </div>
             </div>
         `;
@@ -338,6 +361,15 @@ export class AuthComponent extends BaseComponent {
                 identityManager: this.identityManager,
                 storageManager: this.storageManager
             });
+        });
+
+        this.addEventListener('click', '#manage-devices-btn', () => {
+            this.showDeviceManagement();
+        });
+
+        this.addEventListener('click', '#back-to-profile-btn', () => {
+            this.currentView = 'profile';
+            this.render();
         });
 
         this.addEventListener('click', '#delete-identity-btn', () => {
@@ -441,6 +473,36 @@ export class AuthComponent extends BaseComponent {
             this.render();
             
             this.emit('auth:logout');
+        }
+    }
+
+    async showDeviceManagement() {
+        if (!this.identityManager.deviceTrustManager) {
+            this.showError('Device management not available');
+            return;
+        }
+
+        try {
+            // Initialize device pairing component if not already done
+            if (!this.devicePairingComponent) {
+                this.devicePairingComponent = new DevicePairingComponent(
+                    this.identityManager.deviceTrustManager,
+                    this.identityManager.syncCoordinator
+                );
+            }
+
+            this.currentView = 'devices';
+            this.render();
+
+            // Mount the device pairing component
+            const container = this.getElement('#device-management-container');
+            if (container) {
+                this.devicePairingComponent.mount(container);
+            }
+
+        } catch (error) {
+            console.error('Failed to show device management:', error);
+            this.showError('Failed to load device management');
         }
     }
 
@@ -566,6 +628,11 @@ export class AuthComponent extends BaseComponent {
 
     // Destroy component and cleanup
     destroy() {
+        if (this.devicePairingComponent) {
+            this.devicePairingComponent.destroy();
+            this.devicePairingComponent = null;
+        }
+        
         if (this.identityManager) {
             this.identityManager.destroy();
         }

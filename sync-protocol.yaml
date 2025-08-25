@@ -1,0 +1,568 @@
+openapi: 3.1.0
+info:
+  title: CipherWave Multi-Device Sync Protocol
+  version: 1.0.0
+  description: |
+    Privacy-preserving, decentralized protocol for synchronizing encrypted session data 
+    across multiple devices without central authority or zero-knowledge compromise.
+    
+    **Core Principles:**
+    - End-to-end encryption with forward secrecy
+    - Zero-knowledge architecture (no plaintext accessible to infrastructure)
+    - Decentralized P2P synchronization
+    - Selective data sync with user control
+    - Device-based authorization and key management
+    
+  contact:
+    name: CipherWave Development Team
+  license:
+    name: MIT
+
+servers:
+  - url: wss://signaling.cipherwave.local
+    description: WebSocket signaling server for P2P discovery
+  - url: https://dht.cipherwave.local  
+    description: DHT network endpoint for content addressing
+
+paths:
+  /sync/devices:
+    get:
+      summary: Discover authorized devices for sync
+      description: |
+        Returns encrypted device metadata for all authorized devices in the sync circle.
+        Response is encrypted with the user's master sync key.
+      parameters:
+        - name: X-Device-ID
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-f0-9]{32}$'
+        - name: X-Identity-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-f0-9]{64}$'
+      responses:
+        '200':
+          description: Encrypted device list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncryptedDeviceList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    
+    post:
+      summary: Authorize new device for sync
+      description: |
+        Adds a new device to the sync circle using QR code pairing or device challenge.
+        Requires approval from at least one existing authorized device.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceAuthorizationRequest'
+      responses:
+        '201':
+          description: Device authorization initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceAuthorizationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Device already authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sync/data/{dataType}:
+    get:
+      summary: Retrieve encrypted sync data by type
+      description: |
+        Fetches encrypted chunks of specific data type from the DHT network.
+        Data is encrypted with type-specific keys derived from master sync key.
+      parameters:
+        - name: dataType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [messages, contacts, preferences, keys]
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            description: Pagination cursor for incremental sync
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: since
+          in: query
+          schema:
+            type: integer
+            description: Unix timestamp for delta sync
+      responses:
+        '200':
+          description: Encrypted data chunks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncryptedDataResponse'
+        '404':
+          description: Data type not found or no sync data available
+
+    put:
+      summary: Store encrypted sync data
+      description: |
+        Stores encrypted data chunks in the DHT network with redundancy.
+        Implements conflict resolution through vector clocks.
+      parameters:
+        - name: dataType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [messages, contacts, preferences, keys]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EncryptedDataUpload'
+      responses:
+        '201':
+          description: Data stored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataStorageResponse'
+        '409':
+          description: Conflict detected - merge required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResponse'
+
+  /sync/recovery:
+    post:
+      summary: Initiate recovery process
+      description: |
+        Begins account recovery using Shamir's Secret Sharing across trusted devices.
+        Requires threshold number of device signatures to reconstruct master key.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecoveryRequest'
+      responses:
+        '202':
+          description: Recovery process initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryResponse'
+        '400':
+          description: Invalid recovery request
+        '423':
+          description: Recovery already in progress
+
+  /p2p/discovery:
+    post:
+      summary: WebRTC P2P device discovery
+      description: |
+        Establishes direct P2P connection between authorized devices for real-time sync.
+        Uses existing WebRTC signaling infrastructure.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/P2PDiscoveryRequest'
+      responses:
+        '200':
+          description: P2P connection established
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/P2PConnectionResponse'
+
+components:
+  schemas:
+    EncryptedDeviceList:
+      type: object
+      properties:
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/EncryptedDevice'
+        encryption:
+          $ref: '#/components/schemas/EncryptionMetadata'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+      required: [devices, encryption]
+
+    EncryptedDevice:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          pattern: '^[a-f0-9]{32}$'
+        encryptedMetadata:
+          type: string
+          description: Base64-encoded encrypted device info
+        lastSeen:
+          type: integer
+          description: Unix timestamp
+        trustLevel:
+          type: integer
+          minimum: 0
+          maximum: 100
+        syncCapabilities:
+          type: array
+          items:
+            type: string
+            enum: [messages, contacts, preferences, keys, voice_memos]
+      required: [deviceId, encryptedMetadata, lastSeen]
+
+    DeviceAuthorizationRequest:
+      type: object
+      properties:
+        deviceInfo:
+          type: object
+          properties:
+            deviceId:
+              type: string
+              pattern: '^[a-f0-9]{32}$'
+            publicKey:
+              type: string
+              pattern: '^[a-f0-9]{64}$'
+            deviceName:
+              type: string
+              maxLength: 50
+            deviceType:
+              type: string
+              enum: [mobile, desktop, tablet, web]
+            capabilities:
+              type: array
+              items:
+                type: string
+                enum: [messages, contacts, preferences, keys, voice_memos]
+          required: [deviceId, publicKey, deviceName, deviceType]
+        authMethod:
+          type: string
+          enum: [qr_code, device_challenge, recovery_phrase]
+        challengeData:
+          type: string
+          description: Base64-encoded challenge or QR data
+        signature:
+          type: string
+          description: Signature proving device ownership
+      required: [deviceInfo, authMethod, challengeData, signature]
+
+    DeviceAuthorizationResponse:
+      type: object
+      properties:
+        authorizationId:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        approvalRequired:
+          type: boolean
+        approvalDevices:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: integer
+      required: [authorizationId, status]
+
+    EncryptedDataResponse:
+      type: object
+      properties:
+        chunks:
+          type: array
+          items:
+            $ref: '#/components/schemas/EncryptedDataChunk'
+        encryption:
+          $ref: '#/components/schemas/EncryptionMetadata'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+        vectorClock:
+          type: object
+          additionalProperties:
+            type: integer
+      required: [chunks, encryption]
+
+    EncryptedDataChunk:
+      type: object
+      properties:
+        chunkId:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        encryptedData:
+          type: string
+          description: Base64-encoded encrypted data
+        nonce:
+          type: string
+          pattern: '^[a-f0-9]{24}$'
+        checksum:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+        timestamp:
+          type: integer
+        sequence:
+          type: integer
+        deviceId:
+          type: string
+          pattern: '^[a-f0-9]{32}$'
+      required: [chunkId, encryptedData, nonce, checksum, timestamp, deviceId]
+
+    EncryptedDataUpload:
+      type: object
+      properties:
+        chunks:
+          type: array
+          items:
+            $ref: '#/components/schemas/EncryptedDataChunk'
+        mergeStrategy:
+          type: string
+          enum: [overwrite, merge, conflict_resolution]
+          default: conflict_resolution
+        vectorClock:
+          type: object
+          additionalProperties:
+            type: integer
+      required: [chunks]
+
+    DataStorageResponse:
+      type: object
+      properties:
+        stored:
+          type: array
+          items:
+            type: string
+        replicas:
+          type: integer
+          minimum: 1
+        dhtNodes:
+          type: array
+          items:
+            type: string
+        vectorClock:
+          type: object
+          additionalProperties:
+            type: integer
+      required: [stored, replicas]
+
+    ConflictResponse:
+      type: object
+      properties:
+        conflictId:
+          type: string
+        conflictingChunks:
+          type: array
+          items:
+            $ref: '#/components/schemas/EncryptedDataChunk'
+        resolutionOptions:
+          type: array
+          items:
+            type: string
+            enum: [manual_merge, last_write_wins, device_priority]
+      required: [conflictId, conflictingChunks]
+
+    RecoveryRequest:
+      type: object
+      properties:
+        recoveryType:
+          type: string
+          enum: [device_lost, forgot_password, account_compromise]
+        deviceId:
+          type: string
+          pattern: '^[a-f0-9]{32}$'
+        secretShares:
+          type: array
+          items:
+            type: object
+            properties:
+              shareId:
+                type: integer
+              encryptedShare:
+                type: string
+              deviceSignature:
+                type: string
+            required: [shareId, encryptedShare, deviceSignature]
+        newDeviceInfo:
+          $ref: '#/components/schemas/DeviceAuthorizationRequest/properties/deviceInfo'
+      required: [recoveryType, deviceId]
+
+    RecoveryResponse:
+      type: object
+      properties:
+        recoveryId:
+          type: string
+        status:
+          type: string
+          enum: [initiated, gathering_shares, threshold_met, completed, failed]
+        sharesRequired:
+          type: integer
+        sharesReceived:
+          type: integer
+        approvalDevices:
+          type: array
+          items:
+            type: string
+      required: [recoveryId, status, sharesRequired, sharesReceived]
+
+    P2PDiscoveryRequest:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          pattern: '^[a-f0-9]{32}$'
+        targetDeviceId:
+          type: string
+          pattern: '^[a-f0-9]{32}$'
+        sessionType:
+          type: string
+          enum: [sync, real_time_chat, file_transfer]
+        offer:
+          type: object
+          description: WebRTC offer data
+      required: [deviceId, targetDeviceId, sessionType]
+
+    P2PConnectionResponse:
+      type: object
+      properties:
+        connectionId:
+          type: string
+        answer:
+          type: object
+          description: WebRTC answer data
+        iceServers:
+          type: array
+          items:
+            type: object
+        status:
+          type: string
+          enum: [connecting, connected, failed]
+      required: [connectionId, status]
+
+    EncryptionMetadata:
+      type: object
+      properties:
+        algorithm:
+          type: string
+          enum: [chacha20-poly1305, aes-256-gcm]
+        keyDerivation:
+          type: string
+          enum: [hkdf-sha256, pbkdf2-sha256]
+        version:
+          type: string
+          pattern: '^[0-9]+\.[0-9]+$'
+      required: [algorithm, keyDerivation, version]
+
+    PaginationInfo:
+      type: object
+      properties:
+        cursor:
+          type: string
+        hasMore:
+          type: boolean
+        total:
+          type: integer
+      required: [hasMore]
+
+    Error:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        detail:
+          type: string
+        status:
+          type: integer
+        instance:
+          type: string
+      required: [type, title, status]
+
+  responses:
+    Unauthorized:
+      description: Authentication required or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            type: https://cipherwave.local/errors/unauthorized
+            title: Authentication Required
+            detail: Valid device identity signature required
+            status: 401
+            instance: /sync/devices
+
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            type: https://cipherwave.local/errors/bad-request
+            title: Invalid Request
+            detail: Device ID must be 32 character hex string
+            status: 400
+
+    RateLimited:
+      description: Request rate limit exceeded
+      headers:
+        Retry-After:
+          description: Seconds to wait before next request
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            type: https://cipherwave.local/errors/rate-limited
+            title: Rate Limit Exceeded
+            detail: Maximum 10 requests per minute exceeded
+            status: 429
+
+  securitySchemes:
+    DeviceSignature:
+      type: http
+      scheme: bearer
+      bearerFormat: device-signature
+      description: |
+        Device identity signature using Ed25519. Format:
+        `Bearer {base64(deviceId)}.{base64(timestamp)}.{base64(signature)}`
+
+security:
+  - DeviceSignature: []
+
+tags:
+  - name: Device Management
+    description: Multi-device authorization and discovery
+  - name: Data Synchronization
+    description: Encrypted data sync operations
+  - name: Recovery
+    description: Account and device recovery mechanisms
+  - name: P2P Communication
+    description: Direct device-to-device communication

@@ -1,0 +1,722 @@
+/* CipherWave Device Pairing Styles */
+/* Modern device management interface with security-focused design */
+
+.device-pairing-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header */
+.pairing-header {
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.pairing-header h2 {
+    margin: 0 0 8px 0;
+    color: #2d3748;
+    font-size: 1.8em;
+    font-weight: 600;
+}
+
+.pairing-header .subtitle {
+    color: #718096;
+    margin: 0 0 20px 0;
+    font-size: 1em;
+}
+
+.back-btn {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: 1.1em;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.back-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+/* Device Stats */
+.device-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.stat-number {
+    display: block;
+    font-size: 2em;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+/* Pairing Actions */
+.pairing-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.btn {
+    padding: 14px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+    border: 1px solid #cbd5e0;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0;
+    color: #2d3748;
+}
+
+.btn-success {
+    background: #38a169;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #2f855a;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: #e53e3e;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c53030;
+    transform: translateY(-1px);
+}
+
+.btn-warning {
+    background: #d69e2e;
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #b7791f;
+    transform: translateY(-1px);
+}
+
+/* Device Sections */
+.device-sections {
+    margin-bottom: 30px;
+}
+
+.section-btn {
+    width: 100%;
+    padding: 16px 20px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1em;
+    font-weight: 500;
+    color: #2d3748;
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.section-btn:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.02);
+}
+
+.section-btn.pending {
+    border-color: #f6ad55;
+    background: rgba(246, 173, 85, 0.05);
+}
+
+.section-btn .arrow {
+    color: #718096;
+    transition: transform 0.2s ease;
+}
+
+.section-btn:hover .arrow {
+    transform: translateX(4px);
+}
+
+/* QR Code Generation */
+.qr-generation {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.device-type-selector,
+.qr-settings {
+    margin-bottom: 20px;
+}
+
+.device-type-selector label,
+.qr-settings label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.device-type-selector select,
+.qr-settings select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1em;
+    background: white;
+}
+
+.qr-code-display {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.qr-code-container {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.qr-code-container img {
+    max-width: 300px;
+    height: auto;
+    border-radius: 8px;
+}
+
+.qr-info {
+    margin-bottom: 20px;
+}
+
+.qr-expiry {
+    color: #d69e2e;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.qr-instructions {
+    color: #718096;
+    line-height: 1.5;
+    text-align: left;
+    background: rgba(0, 0, 0, 0.02);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.qr-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* QR Scanner */
+.qr-scanner {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.camera-container {
+    position: relative;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+}
+
+#qr-scanner-video {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+}
+
+.scanner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.scanner-frame {
+    width: 200px;
+    height: 200px;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.5);
+}
+
+.scanner-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.scanner-status {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+#scanner-status-text {
+    color: #718096;
+    font-style: italic;
+}
+
+.manual-input {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 30px;
+}
+
+.manual-input h4 {
+    margin: 0 0 15px 0;
+    color: #2d3748;
+}
+
+#manual-qr-input {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+    resize: vertical;
+}
+
+.scan-result {
+    margin-top: 30px;
+}
+
+.result-card {
+    background: rgba(56, 161, 105, 0.1);
+    border: 2px solid #38a169;
+    border-radius: 12px;
+    padding: 25px;
+}
+
+.result-card h4 {
+    margin: 0 0 15px 0;
+    color: #2f855a;
+    font-size: 1.2em;
+}
+
+.device-info p {
+    margin: 8px 0;
+    color: #2d3748;
+}
+
+.result-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+/* Pending Approvals */
+.pending-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.pending-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #f6ad55;
+}
+
+.pending-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.pending-header h4 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.1em;
+}
+
+.device-type-badge {
+    background: #667eea;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+.pending-details {
+    margin-bottom: 20px;
+    color: #718096;
+}
+
+.pending-details p {
+    margin: 6px 0;
+    font-size: 0.9em;
+}
+
+.pending-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Trusted Devices */
+.devices-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.device-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #38a169;
+}
+
+.device-card.current-device {
+    border-left-color: #667eea;
+    background: rgba(102, 126, 234, 0.02);
+}
+
+.device-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.device-header h4 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.current-badge {
+    background: #667eea;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7em;
+    font-weight: 500;
+}
+
+.device-details {
+    margin-bottom: 20px;
+    color: #718096;
+}
+
+.device-details p {
+    margin: 6px 0;
+    font-size: 0.9em;
+}
+
+.trust-level {
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+.trust-high {
+    background: #c6f6d5;
+    color: #2f855a;
+}
+
+.trust-medium {
+    background: #fef5e7;
+    color: #d69e2e;
+}
+
+.trust-low {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.trust-very-low {
+    background: #fed7d7;
+    color: #9b2c2c;
+}
+
+.sync-preferences {
+    margin-bottom: 20px;
+}
+
+.sync-preferences h5 {
+    margin: 0 0 10px 0;
+    color: #2d3748;
+    font-size: 0.9em;
+}
+
+.sync-toggles {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sync-item {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+.sync-item.enabled {
+    background: #c6f6d5;
+    color: #2f855a;
+}
+
+.sync-item.disabled {
+    background: #e2e8f0;
+    color: #718096;
+}
+
+.device-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 8px;
+}
+
+.current-device-note {
+    text-align: center;
+    color: #667eea;
+    font-style: italic;
+    padding: 10px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 6px;
+}
+
+/* Pairing Status */
+.pairing-status {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.status-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    background: rgba(246, 173, 85, 0.1);
+    border: 2px solid #f6ad55;
+    border-radius: 10px;
+    color: #d69e2e;
+    font-weight: 500;
+}
+
+.status-icon {
+    font-size: 1.2em;
+}
+
+/* Security Info */
+.security-info {
+    margin-top: 40px;
+}
+
+.info-card {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 12px;
+    padding: 25px;
+    border-left: 4px solid #667eea;
+}
+
+.info-card h4 {
+    margin: 0 0 15px 0;
+    color: #2d3748;
+    font-size: 1.1em;
+}
+
+.info-card ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #4a5568;
+    line-height: 1.6;
+}
+
+.info-card li {
+    margin-bottom: 8px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #718096;
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+    font-size: 1.1em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .device-pairing-container {
+        padding: 15px;
+    }
+    
+    .device-stats {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .pairing-actions {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .qr-actions,
+    .result-actions,
+    .pending-actions {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .device-actions {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .back-btn {
+        position: relative;
+        margin-bottom: 15px;
+    }
+    
+    .pairing-header {
+        text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    .device-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .sync-toggles {
+        justify-content: flex-start;
+    }
+    
+    .device-actions {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .device-pairing-container {
+        background: #1a202c;
+        color: #f7fafc;
+    }
+    
+    .pairing-header h2 {
+        color: #f7fafc;
+    }
+    
+    .device-card,
+    .pending-card,
+    .qr-generation,
+    .qr-scanner,
+    .info-card {
+        background: #2d3748;
+        color: #f7fafc;
+    }
+    
+    .section-btn {
+        background: #2d3748;
+        border-color: #4a5568;
+        color: #f7fafc;
+    }
+    
+    .section-btn:hover {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .device-type-selector select,
+    .qr-settings select,
+    #manual-qr-input {
+        background: #2d3748;
+        border-color: #4a5568;
+        color: #f7fafc;
+    }
+    
+    .current-device-note {
+        background: rgba(102, 126, 234, 0.2);
+        color: #90cdf4;
+    }
+}

@@ -1,0 +1,742 @@
+openapi: 3.1.0
+info:
+  title: CipherWave Sync Architecture Specification
+  version: 1.0.0
+  description: |
+    Technical architecture specification for the privacy-preserving, 
+    decentralized multi-device synchronization system.
+    
+    **System Components:**
+    1. Device Trust Circle Manager
+    2. Encrypted Data Sharding Service  
+    3. DHT Content Addressing Layer
+    4. P2P Sync Coordinator
+    5. Secret Recovery Manager
+    6. Conflict Resolution Engine
+
+servers:
+  - url: https://arch.cipherwave.local
+    description: Architecture documentation server
+
+paths:
+  /architecture/components:
+    get:
+      summary: System Architecture Components
+      description: |
+        Documents the core system components and their interactions in the 
+        multi-device sync architecture.
+      responses:
+        '200':
+          description: Architecture components specification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchitectureSpec'
+
+  /architecture/encryption:
+    get:
+      summary: Encryption Scheme Specification
+      description: |
+        Multi-layer encryption strategy for different data types and use cases.
+      responses:
+        '200':
+          description: Encryption scheme details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncryptionScheme'
+
+  /architecture/flow:
+    get:
+      summary: Data Flow Specifications
+      description: |
+        End-to-end data flow for sync operations, device management, and recovery.
+      responses:
+        '200':
+          description: Data flow diagrams and specifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataFlowSpec'
+
+components:
+  schemas:
+    ArchitectureSpec:
+      type: object
+      properties:
+        overview:
+          type: object
+          properties:
+            principles:
+              type: array
+              items:
+                type: string
+              example:
+                - "Zero-knowledge: Infrastructure cannot access user data"
+                - "Forward secrecy: Past data remains secure if current keys compromised"
+                - "Selective sync: Users control what data syncs to which devices"
+                - "Offline-first: Full functionality without internet connectivity"
+                - "Conflict resolution: Automatic handling of concurrent updates"
+            architecture_pattern:
+              type: string
+              enum: [decentralized_p2p, hybrid_dht, mesh_network]
+              example: hybrid_dht
+        
+        components:
+          type: object
+          properties:
+            device_trust_circle:
+              $ref: '#/components/schemas/TrustCircleSpec'
+            data_sharding:
+              $ref: '#/components/schemas/DataShardingSpec'
+            dht_layer:
+              $ref: '#/components/schemas/DHTLayerSpec'
+            p2p_sync:
+              $ref: '#/components/schemas/P2PSyncSpec'
+            recovery_manager:
+              $ref: '#/components/schemas/RecoveryManagerSpec'
+            conflict_resolution:
+              $ref: '#/components/schemas/ConflictResolutionSpec'
+
+    TrustCircleSpec:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "Manages authorized devices using cryptographic trust relationships"
+        capabilities:
+          type: array
+          items:
+            type: string
+          example:
+            - "Device authorization via QR code pairing"
+            - "Trust level calculation based on interaction history" 
+            - "Automatic device revocation on suspicious activity"
+            - "Distributed consensus for device approval"
+        implementation:
+          type: object
+          properties:
+            key_algorithm:
+              type: string
+              example: "Ed25519 for device identity keys"
+            trust_algorithm:
+              type: string
+              example: "Web of trust with decay functions"
+            authorization_threshold:
+              type: integer
+              example: 1
+              description: "Number of existing devices required to approve new device"
+            max_devices:
+              type: integer
+              example: 10
+              description: "Maximum devices in trust circle"
+        
+        trust_levels:
+          type: object
+          properties:
+            new_device:
+              type: integer
+              example: 10
+              description: "Initial trust score for newly authorized devices"
+            full_trust:
+              type: integer
+              example: 100
+              description: "Maximum trust score"
+            revocation_threshold:
+              type: integer
+              example: 5
+              description: "Trust score below which device is auto-revoked"
+        
+        device_types:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              sync_capabilities:
+                type: array
+                items:
+                  type: string
+              security_level:
+                type: string
+                enum: [high, medium, low]
+              default_trust:
+                type: integer
+          example:
+            primary_device:
+              sync_capabilities: [messages, contacts, preferences, keys, voice_memos]
+              security_level: high
+              default_trust: 80
+            mobile_device:
+              sync_capabilities: [messages, contacts, preferences]
+              security_level: medium
+              default_trust: 60
+            web_browser:
+              sync_capabilities: [messages, contacts]
+              security_level: low
+              default_trust: 30
+
+    DataShardingSpec:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "Splits encrypted data into distributed chunks for redundancy and privacy"
+        sharding_strategy:
+          type: object
+          properties:
+            algorithm:
+              type: string
+              example: "Content-based chunking with rolling hash"
+            min_chunk_size:
+              type: integer
+              example: 1024
+              description: "Minimum chunk size in bytes"
+            max_chunk_size:
+              type: integer
+              example: 65536
+              description: "Maximum chunk size in bytes"
+            redundancy_factor:
+              type: integer
+              example: 3
+              description: "Number of replicas per chunk"
+        
+        data_types:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              encryption_key_derivation:
+                type: string
+              chunking_strategy:
+                type: string
+              sync_priority:
+                type: integer
+              retention_policy:
+                type: string
+          example:
+            messages:
+              encryption_key_derivation: "HKDF(master_key, 'messages', conversation_id)"
+              chunking_strategy: "temporal_chunking_1day"
+              sync_priority: 1
+              retention_policy: "keep_forever"
+            contacts:
+              encryption_key_derivation: "HKDF(master_key, 'contacts', device_id)"
+              chunking_strategy: "atomic_per_contact"
+              sync_priority: 2
+              retention_policy: "keep_until_deleted"
+            preferences:
+              encryption_key_derivation: "HKDF(master_key, 'preferences', device_id)"
+              chunking_strategy: "single_chunk"
+              sync_priority: 3
+              retention_policy: "overwrite_on_conflict"
+
+    DHTLayerSpec:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "Distributed hash table for content-addressed storage of encrypted chunks"
+        implementation:
+          type: object
+          properties:
+            protocol:
+              type: string
+              example: "Modified Kademlia DHT"
+            node_discovery:
+              type: string
+              example: "WebRTC signaling server + mDNS for local discovery"
+            content_addressing:
+              type: string
+              example: "SHA-256 hash of encrypted chunk"
+            replication_strategy:
+              type: string
+              example: "Store at K closest nodes, maintain 3 replicas minimum"
+        
+        storage_policies:
+          type: object
+          properties:
+            ttl_default:
+              type: integer
+              example: 2592000
+              description: "Default TTL in seconds (30 days)"
+            max_chunk_storage:
+              type: integer
+              example: 1000
+              description: "Maximum chunks to store per node"
+            eviction_policy:
+              type: string
+              example: "LRU with age weighting"
+        
+        security:
+          type: object
+          properties:
+            node_authentication:
+              type: string
+              example: "Ed25519 signatures for all DHT operations"
+            anti_spam:
+              type: string
+              example: "Proof-of-work for storage operations"
+            privacy_protection:
+              type: string
+              example: "Onion routing for DHT queries"
+
+    P2PSyncSpec:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "Direct device-to-device synchronization using WebRTC data channels"
+        protocols:
+          type: object
+          properties:
+            discovery:
+              type: string
+              example: "WebRTC signaling via existing CipherWave infrastructure"
+            transport:
+              type: string
+              example: "WebRTC data channels with SCTP reliability"
+            encryption:
+              type: string
+              example: "Double ratchet for forward secrecy"
+        
+        sync_modes:
+          type: object
+          properties:
+            real_time:
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: "Live synchronization while both devices online"
+                trigger_events:
+                  type: array
+                  items:
+                    type: string
+                  example: [new_message, contact_update, preference_change]
+                conflict_resolution:
+                  type: string
+                  example: "Last-write-wins with vector clocks"
+            
+            batch_sync:
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: "Periodic bulk synchronization of accumulated changes"
+                schedule:
+                  type: string
+                  example: "Every 15 minutes or on device wake"
+                batch_size_limit:
+                  type: integer
+                  example: 10485760
+                  description: "Maximum sync batch size in bytes"
+            
+            initial_sync:
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: "Full synchronization when adding new device"
+                data_prioritization:
+                  type: array
+                  items:
+                    type: string
+                  example: [keys, preferences, contacts, recent_messages, old_messages]
+                bandwidth_management:
+                  type: string
+                  example: "Adaptive rate limiting based on connection quality"
+
+    RecoveryManagerSpec:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "Account recovery using Shamir's Secret Sharing and device consensus"
+        recovery_methods:
+          type: object
+          properties:
+            device_consensus:
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: "Recovery approved by threshold of existing devices"
+                threshold:
+                  type: string
+                  example: "50% + 1 of trusted devices"
+                approval_window:
+                  type: integer
+                  example: 86400
+                  description: "Time window for approvals in seconds"
+            
+            secret_sharing:
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: "Master key split using Shamir's Secret Sharing"
+                threshold_scheme:
+                  type: string
+                  example: "3-of-5 threshold scheme"
+                share_distribution:
+                  type: string
+                  example: "One share per trusted device, additional shares for recovery phrases"
+                share_refresh:
+                  type: string
+                  example: "Periodic re-sharing to maintain security"
+        
+        recovery_scenarios:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              required_approvals:
+                type: integer
+              additional_verification:
+                type: array
+                items:
+                  type: string
+              recovery_time_limit:
+                type: integer
+          example:
+            device_lost:
+              required_approvals: 1
+              additional_verification: [biometric_if_available]
+              recovery_time_limit: 3600
+            forgot_password:
+              required_approvals: 2
+              additional_verification: [email_verification, security_questions]
+              recovery_time_limit: 86400
+            account_compromise:
+              required_approvals: 3
+              additional_verification: [manual_identity_verification]
+              recovery_time_limit: 604800
+
+    ConflictResolutionSpec:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "Automatic resolution of concurrent updates across devices"
+        resolution_strategies:
+          type: object
+          properties:
+            vector_clocks:
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: "Track causal relationships between updates"
+                implementation:
+                  type: string
+                  example: "Per-device counters with timestamp fallback"
+                merge_rules:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - "If vector clocks show causal order, use later update"
+                    - "If concurrent updates, apply data-type-specific merge"
+                    - "If unresolvable conflict, flag for manual resolution"
+            
+            operational_transform:
+              type: object
+              properties:
+                description:
+                  type: string
+                  example: "Transform concurrent operations for convergence"
+                supported_operations:
+                  type: array
+                  items:
+                    type: string
+                  example: [insert, delete, move, update_property]
+                transformation_functions:
+                  type: string
+                  example: "Standard OT transformation functions with conflict-free replicated data types"
+        
+        data_type_policies:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              merge_strategy:
+                type: string
+              conflict_detection:
+                type: string
+              user_intervention:
+                type: boolean
+          example:
+            messages:
+              merge_strategy: "append_only_log"
+              conflict_detection: "duplicate_message_id"
+              user_intervention: false
+            contacts:
+              merge_strategy: "field_level_merge"
+              conflict_detection: "concurrent_field_updates"
+              user_intervention: true
+            preferences:
+              merge_strategy: "last_write_wins"
+              conflict_detection: "timestamp_comparison"
+              user_intervention: false
+
+    EncryptionScheme:
+      type: object
+      properties:
+        overview:
+          type: object
+          properties:
+            principles:
+              type: array
+              items:
+                type: string
+              example:
+                - "End-to-end encryption: Only user devices can decrypt data"
+                - "Forward secrecy: Regular key rotation limits exposure"
+                - "Data minimization: Encrypt only necessary metadata"
+                - "Key isolation: Separate keys for different data types"
+        
+        key_hierarchy:
+          type: object
+          properties:
+            master_identity_key:
+              type: object
+              properties:
+                algorithm:
+                  type: string
+                  example: "Ed25519"
+                purpose:
+                  type: string
+                  example: "Device identity and authentication"
+                storage:
+                  type: string
+                  example: "Hardware security module or secure enclave when available"
+            
+            master_sync_key:
+              type: object
+              properties:
+                algorithm:
+                  type: string
+                  example: "X25519 + HKDF-SHA256"
+                derivation:
+                  type: string
+                  example: "Derived from identity key + device-specific salt"
+                rotation_policy:
+                  type: string
+                  example: "Monthly automatic rotation with backward compatibility"
+            
+            data_type_keys:
+              type: object
+              properties:
+                derivation:
+                  type: string
+                  example: "HKDF(master_sync_key, data_type, context)"
+                isolation:
+                  type: string
+                  example: "Each data type uses independent key hierarchy"
+                examples:
+                  type: object
+                  example:
+                    messages: "HKDF(master, 'messages', conversation_id)"
+                    contacts: "HKDF(master, 'contacts', device_id)"
+                    preferences: "HKDF(master, 'preferences', user_id)"
+        
+        encryption_algorithms:
+          type: object
+          properties:
+            symmetric_encryption:
+              type: object
+              properties:
+                algorithm:
+                  type: string
+                  example: "ChaCha20-Poly1305"
+                key_size:
+                  type: integer
+                  example: 256
+                nonce_handling:
+                  type: string
+                  example: "Random nonce per message, included in ciphertext"
+            
+            key_exchange:
+              type: object
+              properties:
+                algorithm:
+                  type: string
+                  example: "X25519 ECDH"
+                forward_secrecy:
+                  type: string
+                  example: "Double ratchet for message encryption"
+            
+            signatures:
+              type: object
+              properties:
+                algorithm:
+                  type: string
+                  example: "Ed25519"
+                use_cases:
+                  type: array
+                  items:
+                    type: string
+                  example: [device_authentication, data_integrity, consensus_voting]
+
+    DataFlowSpec:
+      type: object
+      properties:
+        flows:
+          type: object
+          properties:
+            device_authorization:
+              type: object
+              properties:
+                steps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      step:
+                        type: integer
+                      action:
+                        type: string
+                      actor:
+                        type: string
+                      details:
+                        type: string
+                example:
+                  - step: 1
+                    action: "Generate QR code"
+                    actor: "Existing device"
+                    details: "Create device authorization QR containing ephemeral public key and challenge"
+                  - step: 2
+                    action: "Scan QR code"
+                    actor: "New device"
+                    details: "Extract authorization data and generate response with device credentials"
+                  - step: 3
+                    action: "Verify credentials"
+                    actor: "Existing device"
+                    details: "Validate new device signature and user approval"
+                  - step: 4
+                    action: "Distribute trust"
+                    actor: "Trust circle"
+                    details: "Add new device to encrypted trust circle and sync to all devices"
+            
+            data_synchronization:
+              type: object
+              properties:
+                steps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      step:
+                        type: integer
+                      action:
+                        type: string
+                      actor:
+                        type: string
+                      details:
+                        type: string
+                example:
+                  - step: 1
+                    action: "Detect changes"
+                    actor: "Source device"
+                    details: "Monitor local data changes and queue for sync"
+                  - step: 2
+                    action: "Encrypt and chunk"
+                    actor: "Data sharding service"
+                    details: "Encrypt changes with type-specific keys and create chunks"
+                  - step: 3
+                    action: "Store in DHT"
+                    actor: "DHT layer"
+                    details: "Distribute encrypted chunks across DHT nodes with redundancy"
+                  - step: 4
+                    action: "Notify peers"
+                    actor: "P2P sync coordinator"  
+                    details: "Send sync notifications to online devices in trust circle"
+                  - step: 5
+                    action: "Pull and merge"
+                    actor: "Target devices"
+                    details: "Fetch new chunks, decrypt, and merge with local data"
+            
+            conflict_resolution:
+              type: object
+              properties:
+                steps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      step:
+                        type: integer
+                      action:
+                        type: string
+                      actor:
+                        type: string
+                      details:
+                        type: string
+                example:
+                  - step: 1
+                    action: "Detect conflict"
+                    actor: "Conflict resolution engine"
+                    details: "Compare vector clocks to identify concurrent updates"
+                  - step: 2
+                    action: "Attempt automatic merge"
+                    actor: "Merge algorithms"
+                    details: "Apply data-type-specific merge strategies"
+                  - step: 3
+                    action: "Flag for manual resolution"
+                    actor: "User interface"
+                    details: "If automatic merge fails, present options to user"
+                  - step: 4
+                    action: "Propagate resolution"
+                    actor: "Sync coordinator"
+                    details: "Distribute resolved version to all devices"
+            
+            account_recovery:
+              type: object
+              properties:
+                steps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      step:
+                        type: integer
+                      action:
+                        type: string
+                      actor:
+                        type: string
+                      details:
+                        type: string
+                example:
+                  - step: 1
+                    action: "Initiate recovery"
+                    actor: "New/recovering device"
+                    details: "Request account recovery with identity proofs"
+                  - step: 2
+                    action: "Gather approvals"
+                    actor: "Trusted devices"
+                    details: "Existing devices vote on recovery request with signatures"
+                  - step: 3
+                    action: "Reconstruct secrets"
+                    actor: "Secret sharing system"
+                    details: "Combine secret shares if threshold met"
+                  - step: 4
+                    action: "Verify and authorize"
+                    actor: "Recovery manager"
+                    details: "Validate reconstruction and add device to trust circle"
+                  - step: 5
+                    action: "Initial sync"
+                    actor: "Sync coordinator"
+                    details: "Perform full data synchronization to recovered device"
+
+      required: [overview, components]
+
+  responses:
+    ArchitectureDocumentation:
+      description: Complete architecture specification
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/ArchitectureSpec'
+              - $ref: '#/components/schemas/EncryptionScheme'
+              - $ref: '#/components/schemas/DataFlowSpec'
