@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { RadioTower, Lock, Hash, RefreshCw, Copy, ArrowLeft, LogOut, Send, Users, Search } from '@lucide/svelte';
+  import { RadioTower, Lock, Hash, RefreshCw, Copy, ArrowLeft, LogOut, Send, Users, Search, X } from '@lucide/svelte';
   import { createChat, generateRoomCode, parseRoomCode, type Peer } from './lib/chat';
   import qrcode from 'qrcode-generator';
   import Waveform from './components/Waveform.svelte';
+  import QrPanel from './components/QrPanel.svelte';
 
   // A room code shared via the URL hash (#CODE) when the app is hosted — lets a
   // scanned QR open the app already pointed at the channel.
@@ -39,6 +40,7 @@
 
   let messageInput = $state('');
   let searchQuery = $state('');
+  let drawerOpen = $state(false); // mobile channel/stations drawer
 
   let qrDataUrl = $derived(roomCode ? makeQR(joinTarget(roomCode)) : '');
 
@@ -124,6 +126,7 @@
 
   function disconnect() {
     chat.disconnect();
+    drawerOpen = false;
     view = 'connect';
   }
 
@@ -231,9 +234,8 @@
       </div>
 
       {#if qrDataUrl}
-        <div class="qr-window">
-          <img class="qr" src={qrDataUrl} alt="Channel QR code" width="138" height="138" />
-          <span class="qr-cap">Scan to join this channel</span>
+        <div class="qr-block">
+          <QrPanel dataUrl={qrDataUrl} label="Channel QR · scan to join" open={true} size={150} />
         </div>
       {/if}
 
@@ -254,7 +256,12 @@
 {:else}
   <!-- ===== OPEN CHANNEL · TRANSMISSION LOG ===== -->
   <div class="console-page">
-    <aside class="rail">
+    {#if drawerOpen}
+      <div class="scrim" role="button" tabindex="0" aria-label="Close panel"
+        onclick={() => (drawerOpen = false)}
+        onkeydown={(e) => { if (e.key === 'Escape') drawerOpen = false; }}></div>
+    {/if}
+    <aside class="rail {drawerOpen ? 'open' : ''}">
       <div class="rail-head">
         <div class="callsign sm">
           <div class="avatar">{myUser?.avatar}</div>
@@ -263,7 +270,10 @@
             <span class="callsign-id mono">{myUser?.id}</span>
           </div>
         </div>
-        <button class="icon-btn" onclick={disconnect} title="Leave channel"><LogOut class="ic-sm" /></button>
+        <div class="rail-actions">
+          <button class="icon-btn" onclick={disconnect} title="Leave channel"><LogOut class="ic-sm" /></button>
+          <button class="icon-btn mobile-only" onclick={() => (drawerOpen = false)} aria-label="Close panel"><X class="ic-sm" /></button>
+        </div>
       </div>
 
       <div class="secure-strip">
@@ -279,7 +289,7 @@
           </div>
           <button class="icon-btn" onclick={copyRoomCode} title="Copy code"><Copy class="ic-sm" /></button>
         </div>
-        {#if qrDataUrl}<img class="channel-qr" src={qrDataUrl} alt="Channel QR" width="110" height="110" />{/if}
+        {#if qrDataUrl}<QrPanel dataUrl={qrDataUrl} label="Show QR" open={false} size={150} />{/if}
       </div>
 
       <div class="rail-section">
@@ -311,13 +321,14 @@
 
     <main class="channel">
       <header class="channel-head">
-        <button class="icon-btn mobile-only" onclick={disconnect} aria-label="Leave"><ArrowLeft class="ic-sm" /></button>
+        <button class="icon-btn mobile-only" onclick={() => (drawerOpen = true)} aria-label="Channel & stations"><Users class="ic-sm" /></button>
         <div class="channel-title">
           <span class="ch-name">CipherWave</span>
           <span class="ch-status mono">{$connected ? `Connected · ${$peers.length} on channel` : ($status || 'Acquiring signal…')}</span>
         </div>
         <div class="carrier"><Waveform height={26} amplitude={$connected ? 0.4 : 0.7} noise={$connected ? 0.08 : 0.2} speed={$connected ? 0.7 : 1.4} lineWidth={1.5} /></div>
         <Lock class="ic-md secure" />
+        <button class="icon-btn mobile-only" onclick={disconnect} aria-label="Leave channel"><LogOut class="ic-sm" /></button>
       </header>
 
       <div class="log">
@@ -520,10 +531,7 @@
   }
 
   /* ===== QR ===== */
-  .qr-window { display: flex; flex-direction: column; align-items: center; gap: 9px; margin: 6px 0 18px; }
-  .qr { background: #fff; padding: 9px; border-radius: var(--r-md); image-rendering: pixelated;
-        box-shadow: 0 0 0 1px var(--line), 0 8px 24px rgba(0,0,0,0.4); }
-  .qr-cap { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+  .qr-block { margin: 4px 0 18px; }
 
   /* ===== Steps ===== */
   .steps { list-style: none; margin: 0 0 22px; display: flex; flex-direction: column; gap: 7px; }
@@ -555,7 +563,7 @@
   .channel-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
   .channel-card .lbl { margin: 0; }
   .channel-code { font-size: 12px; font-weight: 700; color: var(--signal); word-break: break-all; letter-spacing: 0.08em; }
-  .channel-qr { background: #fff; padding: 7px; border-radius: var(--r-sm); image-rendering: pixelated; }
+  .rail-actions { display: flex; gap: 6px; }
 
   .rail-section { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 4px 0 0; }
   .search { display: flex; align-items: center; gap: 9px; padding: 10px 18px; }
@@ -633,14 +641,32 @@
   :global(.muted) { color: var(--muted); }
 
   .mobile-only { display: none; }
+  .scrim { position: fixed; inset: 0; z-index: 35; background: rgba(3, 5, 7, 0.6); backdrop-filter: blur(2px); }
 
   /* ===== Responsive ===== */
   @media (max-width: 760px) {
-    .rail { display: none; }
+    .stage { align-items: flex-start; padding: 16px 14px; }
+    .hero-card { padding: 30px 20px 16px; }
+    .connect-card { padding: 24px 18px 20px; }
+    .icon-btn.back { top: 13px; left: 13px; }
+    .wave-window { margin: 18px 0 22px; }
+
     .mobile-only { display: grid; }
     .carrier { display: none; }
-    .tx { max-width: 86%; }
-    .log { padding: 18px 16px; }
-    .composer { padding: 12px 16px; }
+    .channel-title { flex: 1; }
+
+    /* sidebar → slide-in drawer */
+    .rail {
+      position: fixed; top: 0; bottom: 0; left: 0; z-index: 40;
+      width: min(88vw, 358px); transform: translateX(-100%);
+      transition: transform .25s ease; box-shadow: 0 0 60px rgba(0, 0, 0, 0.6);
+    }
+    .rail.open { transform: translateX(0); }
+
+    .channel { width: 100%; }
+    .channel-head { padding: 11px 12px; gap: 10px; }
+    .tx { max-width: 88%; }
+    .log { padding: 18px 14px; }
+    .composer { padding: 12px 14px; }
   }
 </style>
