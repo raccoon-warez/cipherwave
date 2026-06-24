@@ -1,0 +1,17 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CipherWave logo">
+  <rect x="3" y="3" width="114" height="114" rx="26" fill="#0c1118" stroke="#9c7440" stroke-width="1.5"/>
+  <!-- amber top rail -->
+  <rect x="30" y="3" width="60" height="2" rx="1" fill="#ffb454" opacity="0.8"/>
+  <g stroke="#ffb454" stroke-width="4" stroke-linecap="round" fill="none">
+    <!-- antenna mast -->
+    <line x1="60" y1="46" x2="60" y2="78"/>
+    <!-- tower base -->
+    <path d="M48 80 L60 60 L72 80"/>
+    <!-- radio waves -->
+    <path d="M49 38 a 16 16 0 0 0 0 22" opacity="0.95"/>
+    <path d="M71 38 a 16 16 0 0 1 0 22" opacity="0.95"/>
+    <path d="M41 31 a 27 27 0 0 0 0 36" opacity="0.55"/>
+    <path d="M79 31 a 27 27 0 0 1 0 36" opacity="0.55"/>
+  </g>
+  <circle cx="60" cy="42" r="6" fill="#ffb454"/>
+</svg>

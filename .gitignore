@@ -1,25 +1,42 @@
 # Dependencies
 node_modules/
+package-lock.json
 
-# Logs
-*.log
+# Build output
+dist/
+out/
+*.tsbuildinfo
 
-# Environment files
+# Environment
 .env
+.env.local
+.env.*.local
 
-# IDE files
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# OS generated files
+# OS
 .DS_Store
 Thumbs.db
 
-# NPM debug log
-npm-debug.log*
+# Tests
+coverage/
+.nyc_output/
 
-# Optional npm cache directory
-.npm
+# Capacitor
+ capacitor/
+www/build/
 
-# Optional eslint cache
-.eslintcache
+# Playwright
+test-results/
+playwright-report/
+
+# Generated / local artifacts
+.svelte-kit/
+debug_screenshot*.png
+session-*.md
+_*.mjs

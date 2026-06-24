@@ -1,237 +1,133 @@
-# CipherWave - Secure P2P Messenger
+<p align="center">
+  <img src="docs/media/banner.png" alt="CipherWave — anonymous, end-to-end encrypted, serverless" width="100%">
+</p>
 
-![CipherWave Interface](cipherwave.png)
+<h1 align="center">CipherWave</h1>
 
-CipherWave is a decentralized, anonymous, peer-to-peer messenger with end-to-end encryption and cipher choice. It enables secure communication directly between browsers without central servers for messaging.
+<p align="center">
+  <strong>Anonymous, end-to-end encrypted chat that runs from a single HTML file — no account, no server, no trace.</strong>
+</p>
 
-## Features
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-ffb454?style=flat-square" alt="MIT">
+  <img src="https://img.shields.io/badge/backend-none-58d3c9?style=flat-square" alt="Serverless">
+  <img src="https://img.shields.io/badge/encryption-E2E%20%C2%B7%20AES--256--GCM-ffb454?style=flat-square" alt="E2E encrypted">
+  <img src="https://img.shields.io/badge/runs%20from-file%3A%2F%2F-58d3c9?style=flat-square" alt="Runs from file://">
+  <img src="https://img.shields.io/badge/Svelte-5-ff6f61?style=flat-square" alt="Svelte 5">
+</p>
 
-- **Anonymous Communication**: No user accounts or personal information required
-- **Peer-to-Peer Secure Messaging**: Direct browser-to-browser communication using WebRTC
-- **Multiple Cipher Options**: Choose between AES-256, RSA, or ChaCha20 encryption
-- **Decentralized Architecture**: No central server required for messaging
-- **Mobile-First Design**: Fully responsive interface that works on mobile devices
-- **Node Hosting**: Users can contribute to the network by hosting their own signaling nodes
-- **Enhanced Security**: Improved server security with message validation and connection health checks
-- **Better Error Handling**: Comprehensive error handling and logging for easier debugging
+---
 
-## How It Works
+CipherWave is a secure messenger with an unusual property: **the entire app is one self-contained `index.html`.** Double-click it, pick a handle, share a channel code, and you're talking — encrypted end to end, with **nothing of yours running anywhere**. No backend to deploy, no account to create, no database holding your messages.
 
-CipherWave uses WebRTC for direct peer-to-peer communication between browsers. A minimal signaling server is used only for initial connection setup, after which all messaging happens directly between peers.
+It's dressed as a clandestine shortwave station because that's what it is underneath: anonymous call signs, channels you tune into, and transmissions that are pure noise to anyone in between.
 
-The application supports two modes:
-1. **Host Network Node**: Run your own signaling server to help facilitate connections for other users
-2. **Join Network**: Connect to an existing signaling server to communicate with others
+<table>
+  <tr>
+    <td width="33%"><img src="docs/media/screen-identity.png" alt="Identity screen"></td>
+    <td width="33%"><img src="docs/media/screen-channel.png" alt="Open a channel"></td>
+    <td width="33%"><img src="docs/media/screen-mobile.png" alt="Mobile chat"></td>
+  </tr>
+</table>
 
-## Installation
+<p align="center"><img src="docs/media/screen-chat.png" alt="Encrypted transmission log" width="100%"></p>
 
-1. Clone or download this repository
-2. Install Node.js (if not already installed)
-3. Install dependencies:
-   ```
-   npm install
-   ```
+## Why it's different
 
-## Usage
+- **Truly serverless.** Peers find each other and relay messages through public MQTT brokers. You operate nothing — there's no signaling server, no TURN server, no database.
+- **Opens from `file://`.** `npm run build` produces a single inlined `www/index.html` (fonts, styles and code all embedded). Host it anywhere, or just open the file. It's a secure context, so WebCrypto works the same as on `https`.
+- **Relay-proof end-to-end encryption.** Everything that crosses the broker — messages, presence, even nicknames — is ciphertext. The broker only ever sees an opaque blob on a topic that is a hash of your channel code.
+- **Anonymous by construction.** No email, phone, or account. You choose a handle and are assigned a random call sign (`CW-…`). Nothing is stored; history lives only in the open tab.
+- **Group channels (2–64).** Set a capacity when you open a channel; it travels inside the shareable code.
+- **Share by QR.** Every channel shows a QR code (and, when hosted, a one-tap join link).
 
-### Option 1: Using the Built-in Signaling Server
+## How the encryption works
 
-1. Start the built-in signaling server:
-   ```
-   npm start
-   ```
-   or
-   ```
-   node server.js
-   ```
+Two independent layers protect every transmission:
 
-2. Open `index.html` in two separate browser tabs/windows
+1. **Transport layer (vs. the relay).** A key is derived from the channel code (`HKDF-SHA-256` → `AES-256-GCM`). *Every* payload published to the broker is encrypted with it. Because the broker never learns the channel code — only `SHA-256(code)`, used as the topic — it cannot read messages, presence, or nicknames. It sees noise.
+2. **Pairwise layer (between members).** Each pair of peers performs an ephemeral **ECDH (P-256)** key agreement and derives its own `AES-256-GCM` key (HKDF, salted with the channel code). Every pair has a distinct key, and a party without the code cannot derive a working one even after observing the public keys.
 
-3. In both tabs:
-   - Click "Join Network"
-   - Enter the same room ID in both tabs (or generate one in the first tab and copy to the second)
-   - Select the same encryption cipher in both tabs
-   - Click "Connect" in both tabs
-   - Start messaging securely between the tabs
+> The channel code is the access secret — anyone who has it is a member, by design. Treat it like a password; generated codes carry ~80 bits of entropy. CipherWave does **not** provide forward secrecy or hide metadata such as timing and IP addresses. See the full **[threat model](docs/security/threat-model.md)**.
 
-### Option 2: Hosting Your Own Signaling Node
+## How it connects
 
-1. Start your own signaling node:
-   ```
-   npm run start-node [port]
-   ```
-   or
-   ```
-   node node-host.js [port]
-   ```
-   (Replace [port] with your desired port number, default is 8080)
+```
+ your browser ──┐                            ┌── their browser
+                │   public MQTT broker(s)     │
+ encrypt (E2E) ─┤  topic = SHA-256(channel)  ├─ decrypt (E2E)
+                │   sees only ciphertext      │
+                └────────────────────────────┘
+```
 
-2. Open `index.html` in two separate browser tabs/windows
+There is **no WebRTC** — direct peer-to-peer fails in too many real networks (NAT, captive portals, isolated browser contexts) and free TURN relays are unreliable. Instead, CipherWave relays the already-encrypted payloads through public pub/sub brokers (EMQX, HiveMQ, Mosquitto, with automatic failover). It's the model a self-hosted relay would give you — without the self-hosting.
 
-3. In both tabs:
-   - Click "Join Network"
-   - Enter the same room ID in both tabs (or generate one in the first tab and copy to the second)
-   - Select the same encryption cipher in both tabs
-   - Click "Connect" in both tabs
-   - Start messaging securely between the tabs
+## Quick start
 
-### Automatic Server Discovery
+**Just use it** — open the prebuilt file:
 
-The application now automatically discovers available signaling servers from a predefined list, eliminating the need to manually specify server addresses.
+```bash
+open www/index.html        # macOS  (or double-click it)
+```
 
-## Technical Details
+Open it in two windows (or on two devices), pick different handles, share the channel code, and transmit.
 
-### Encryption
+**Build it yourself:**
 
-CipherWave supports three encryption ciphers:
-- **AES-256**: Symmetric encryption using a randomly generated key
-- **RSA**: Asymmetric encryption (simulated in this implementation)
-- **ChaCha20**: Stream cipher (simulated using AES in this implementation)
+```bash
+npm install
+npm run build:client       # → www/index.html (one self-contained file)
+```
 
-In a production implementation, proper key exchange mechanisms would be used for secure communication.
+**Develop with hot reload:**
 
-### WebRTC Implementation
+```bash
+npm run dev:client         # http://localhost:17612
+```
 
-The application uses WebRTC for peer-to-peer communication:
-- STUN servers for NAT traversal
-- TURN servers as fallback for restrictive networks
-- Data channels for secure message transmission
+## Using it
 
-### Signaling
+1. **Create an identity** — choose a handle; you're given an anonymous `CW-…` call sign.
+2. **Open a channel** — generate a code (or paste one you were sent), set the capacity, and connect. Share the code or QR.
+3. **Transmit** — once a station joins, the channel secures and the composer unlocks. Closing a tab cleanly leaves the channel (via an MQTT last-will), so others see you drop off.
 
-A minimal WebSocket signaling server is used only for:
-- Peer discovery and room management
-- Exchanging WebRTC offer/answer and ICE candidates
-- No message content is transmitted through the signaling server
+## Tech stack
 
-## Contributing to the Network
+| Layer | Choice |
+|---|---|
+| UI | Svelte 5 + Vite 6, bundled to a single file with `vite-plugin-singlefile` |
+| Transport | MQTT over WebSockets (`mqtt`) to public brokers |
+| Crypto | Web Crypto API — ECDH P-256, HKDF-SHA-256, AES-256-GCM |
+| Extras | `qrcode-generator`, Chakra Petch + Space Mono (inlined, offline) |
 
-Users can contribute to the decentralized network by hosting their own signaling nodes:
-1. Run `npm run start-node [port]` to start a node
-2. Share the node address (e.g., `ws://your-ip:port`) with others
-3. Others can connect to your node to establish peer-to-peer connections
+## Project structure
 
-## Troubleshooting Connection Issues
+```
+src/client/
+  src/
+    App.svelte          UI — identity / channel / transmission log
+    lib/
+      mesh.ts           MQTT pub/sub transport + relay-proof envelope encryption
+      e2e.ts            ECDH + HKDF + AES-GCM primitives (pure, unit-tested)
+      chat.ts           orchestration store — key exchange, per-recipient encryption
+    components/Waveform.svelte   the live oscilloscope signature
+docs/
+  security/threat-model.md      what's protected and what isn't
+tests/                          unit + Playwright e2e
+```
 
-If you're having trouble connecting between different browsers or devices:
+> The repository also contains a legacy Node signaling server under `src/server/` from an earlier architecture. It still builds and is tested, but the app no longer needs it — chat is fully serverless.
 
-1. **Check Network Connectivity**: Ensure all devices are on the same network or that the signaling server is accessible from all devices.
+## Tests
 
-2. **Verify Signaling Server**: Make sure the signaling server is running and accessible. The server now binds to all network interfaces.
+```bash
+npm test           # unit + integration (crypto, key exchange, mesh orchestration)
+npm run typecheck  # TypeScript
+npx playwright test  # e2e — UI flows + boots the built file from file://
+```
 
-3. **Use Browser Console**: Open the browser's developer console (F12) and run `debugCipherWave()` to get detailed connection information.
-
-4. **Check Firewall Settings**: Ensure port 8080 (or your custom port) is open on the device running the signaling server.
-
-5. **Try Different Networks**: Some networks (especially corporate or public WI-FI) may block WebRTC connections.
-
-## Security Considerations
-
-- All messages are end-to-end encrypted
-- No message content is stored on any server
-- Signaling servers only facilitate connection setup and never see message content
-- Room IDs should be shared securely between participants
-- For maximum security, host your own signaling node
-
-## Limitations
-
-- This is a demonstration implementation and should not be used for highly sensitive communications without further security review
-- The RSA and ChaCha20 implementations are simulated using AES for simplicity
-- NAT traversal may not work in all network configurations
-- Browser compatibility may vary
-
-## Debugging Features
-
-The application includes enhanced debugging features:
-- Detailed connection state logging in the browser console
-- Connection state tracking for troubleshooting
-- Debug script (`debug-connection.js`) for diagnosing issues
-- Enhanced error handling and reporting
-
-## Development
-
-This project now includes:
-- **Package Management**: Proper dependency management with npm
-- **Development Scripts**: 
-  - `npm start`: Run the main signaling server
-  - `npm run start-node`: Run a node host
-  - `npm run dev`: Run the main server with nodemon for development
-  - `npm run dev-node`: Run a node host with nodemon for development
-  - `npm run build-web`: Build web assets for mobile apps
-  - `npm run build`: Build native mobile apps
-  - `npm run open-android`: Open Android project in Android Studio
-  - `npm run open-ios`: Open iOS project in Xcode
-- **Security Enhancements**: 
-  - Message size limits
-  - Input validation
-  - Connection health checks
-  - Graceful shutdown handling
-- **Error Handling**: 
-  - Comprehensive error logging
-  - Uncaught exception handling
-  - Unhandled rejection handling
-
-## Mobile App Development
-
-CipherWave can be built as a native mobile app for both Android and iOS using Capacitor.
-
-### Prerequisites
-
-- Node.js and npm
-- Android Studio for Android development
-- Xcode for iOS development (macOS only)
-
-### Building for Mobile
-
-1. Install dependencies:
-   ```
-   npm install
-   ```
-
-2. Build web assets:
-   ```
-   npm run build-web
-   ```
-
-3. Build native apps:
-   ```
-   npm run build
-   ```
-
-4. Open native projects:
-   - For Android: `npm run open-android`
-   - For iOS: `npm run open-ios`
-
-### Android Build
-
-To build for Android:
-1. Ensure Android Studio is installed
-2. Run `npm run build-web` to prepare web assets
-3. Run `npm run build` to build the Android app
-4. Run `npm run open-android` to open the project in Android Studio
-5. Build and run the app from Android Studio
-
-### iOS Build
-
-To build for iOS:
-1. Ensure Xcode is installed (macOS only)
-2. Run `npm run build-web` to prepare web assets
-3. Run `npm run build` to build the iOS app
-4. Run `npm run open-ios` to open the project in Xcode
-5. Build and run the app from Xcode
-
-Note: For iOS development, you may need to run `npx cap add ios` and `npx cap sync` if the iOS platform is not already set up.
-
-## Files
-
-- `index.html`: Main application interface
-- `styles.css`: Application styling
-- `script.js`: Client-side WebRTC and messaging implementation
-- `server.js`: Built-in signaling server
-- `node-host.js`: Standalone signaling node for hosting
-- `package.json`: Project dependencies and scripts
-- `README.md`: This file
+The suite proves the cryptography end to end: per-pair key isolation, channel-code key binding, that an outsider (or the relay) cannot decrypt, and that the built `file://` page mounts with WebCrypto available.
 
 ## License
 
-This project is for educational and demonstration purposes. Use at your own risk.
+[MIT](LICENSE)

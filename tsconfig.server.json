@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noUncheckedIndexedAccess": false,
+    "noEmitOnError": true
+  },
+  "include": ["src/server/**/*.ts", "src/core/**/*.ts"],
+  "exclude": ["src/client"]
+}

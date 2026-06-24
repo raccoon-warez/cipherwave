@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: cipherwave-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  cipherwave:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cipherwave-server
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - NODE_ENV=production
+      - TLS_ENABLED=${TLS_ENABLED:-false}
+      - METRICS_ENABLED=true
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - ./uploads:/app/uploads
+
+  nginx:
+    image: nginx:alpine
+    container_name: cipherwave-nginx
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./certs:/etc/nginx/certs
+    depends_on:
+      - cipherwave
+    restart: unless-stopped
+
+volumes:
+  redis-data:

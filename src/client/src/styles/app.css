@@ -1,0 +1,86 @@
+/* ============================================================
+   CipherWave — design tokens + base
+   Concept: clandestine shortwave / numbers-station instrument.
+   Amber phosphor on ink; teal reserved for the encryption layer.
+   ============================================================ */
+:root {
+  /* Ground & surfaces — unlit equipment glass */
+  --ink: #06090c;
+  --ink-2: #080c11;
+  --panel: #0c1118;
+  --panel-2: #0f1620;
+  --line: #1b2430;
+  --line-bright: #2a3848;
+
+  /* Signal — the warm phosphor (the human carrier) */
+  --signal: #ffb454;
+  --signal-bright: #ffc879;
+  --signal-dim: #9c7440;
+  --signal-glow: rgba(255, 180, 84, 0.20);
+
+  /* Secure — the cool cryptographic layer (lock / E2E only) */
+  --secure: #58d3c9;
+  --secure-dim: #2f6e6a;
+
+  /* Text */
+  --text: #ece7dd;
+  --text-2: #aeb4bd;
+  --muted: #6b7682;
+  --faint: #3c4651;
+
+  --danger: #ff6f61;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+
+  --font-display: 'Chakra Petch', system-ui, sans-serif;
+  --font-mono: 'Space Mono', 'SF Mono', ui-monospace, monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Faint scanline atmosphere — the "screen" behind everything (very subtle). */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255, 180, 84, 0.06), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.015) 0 1px, transparent 1px 3px);
+  opacity: 0.7;
+}
+
+#app { position: relative; z-index: 1; }
+
+::selection { background: var(--signal); color: var(--ink); }
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--line-bright); border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
