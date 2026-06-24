@@ -40,3 +40,4 @@ playwright-report/
 debug_screenshot*.png
 session-*.md
 _*.mjs
+.vercel
