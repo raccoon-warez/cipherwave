@@ -174,7 +174,7 @@
           spellcheck="false"
         />
         {#if usernameError}<p class="msg-err">{usernameError}</p>{/if}
-        <p class="hint">You'll be assigned an anonymous call sign. No email, phone or account.</p>
+        <p class="hint">You'll be assigned a random call sign. No email, phone or account.</p>
       </div>
 
       <button class="btn btn-primary" onclick={handleRegister}>Create Identity</button>

@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="docs/media/banner.png" alt="CipherWave — anonymous, end-to-end encrypted, serverless" width="100%">
+  <img src="docs/media/banner.png" alt="CipherWave — end-to-end encrypted, serverless" width="100%">
 </p>
 
 <h1 align="center">CipherWave</h1>
 
 <p align="center">
-  <strong>Anonymous, end-to-end encrypted chat that runs from a single HTML file — no account, no server, no trace.</strong>
+  <strong>End-to-end encrypted chat that runs from a single HTML file — no account, no server, no trace.</strong>
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 CipherWave is a secure messenger with an unusual property: **the entire app is one self-contained `index.html`.** Double-click it, pick a handle, share a channel code, and you're talking — encrypted end to end, with **nothing of yours running anywhere**. No backend to deploy, no account to create, no database holding your messages.
 
-It's dressed as a clandestine shortwave station because that's what it is underneath: anonymous call signs, channels you tune into, and transmissions that are pure noise to anyone in between.
+It's dressed as a clandestine shortwave station because that's what it is underneath: random call signs, channels you tune into, and transmissions that are pure noise to anyone in between.
 
 <table>
   <tr>
@@ -37,7 +37,7 @@ It's dressed as a clandestine shortwave station because that's what it is undern
 - **Truly serverless.** Peers find each other and relay messages through public MQTT brokers. You operate nothing — there's no signaling server, no TURN server, no database.
 - **Opens from `file://`.** `npm run build` produces a single inlined `www/index.html` (fonts, styles and code all embedded). Host it anywhere, or just open the file. It's a secure context, so WebCrypto works the same as on `https`.
 - **Relay-proof end-to-end encryption.** Everything that crosses the broker — messages, presence, even nicknames — is ciphertext. The broker only ever sees an opaque blob on a topic that is a hash of your channel code.
-- **Anonymous by construction.** No email, phone, or account. You choose a handle and are assigned a random call sign (`CW-…`). Nothing is stored; history lives only in the open tab.
+- **Account-free by construction.** No email, phone, or account. You choose a handle and are assigned a random call sign (`CW-…`). Nothing is stored; history lives only in the open tab.
 - **Group channels (2–64).** Set a capacity when you open a channel; it travels inside the shareable code.
 - **Share by QR.** Every channel shows a QR code (and, when hosted, a one-tap join link).
 
@@ -87,7 +87,7 @@ npm run dev:client         # http://localhost:17612
 
 ## Using it
 
-1. **Create an identity** — choose a handle; you're given an anonymous `CW-…` call sign.
+1. **Create an identity** — choose a handle; you're given a random `CW-…` call sign.
 2. **Open a channel** — generate a code (or paste one you were sent), set the capacity, and connect. Share the code or QR.
 3. **Transmit** — once a station joins, the channel secures and the composer unlocks. Closing a tab cleanly leaves the channel (via an MQTT last-will), so others see you drop off.
 

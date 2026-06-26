@@ -1,7 +1,7 @@
 {
   "name": "cipherwave",
   "version": "2.0.0",
-  "description": "Decentralized, anonymous, peer-to-peer messenger with E2E encryption and distributed signaling",
+  "description": "Decentralized, peer-to-peer messenger with E2E encryption and distributed signaling",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
@@ -29,7 +29,6 @@
     "messaging",
     "encryption",
     "decentralized",
-    "anonymous",
     "signal-protocol",
     "distributed"
   ],
